@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText } from 'lucide-react';
 
 const App = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -8,27 +8,34 @@ const App = () => {
   const [error, setError] = useState(null);
 
   const [coins, setCoins] = useState({
-    '50': 0, '100': 0, '200': 0, '500': 0, '1000': 0
+    '50': '', '100': '', '200': '', '500': '', '1000': ''
   });
 
   const [bills, setBills] = useState({
-    '2000': 0, '5000': 0, '10000': 0, '20000': 0, '50000': 0, '100000': 0
+    '2000': '', '5000': '', '10000': '', '20000': '', '50000': '', '100000': ''
   });
 
-  // Nuevo estado para excedentes múltiples
   const [excedentes, setExcedentes] = useState([
-    { id: 1, tipo: 'efectivo', valor: 0 }
+    { id: 1, tipo: 'efectivo', subtipo: '', valor: '' }
   ]);
 
   const [adjustments, setAdjustments] = useState({
-    gastos_operativos: 0,
-    prestamos: 0
+    gastos_operativos: '',
+    gastos_operativos_nota: '',
+    prestamos: '',
+    prestamos_nota: ''
   });
 
   const tiposExcedente = [
     { value: 'efectivo', label: 'Excedente Efectivo' },
     { value: 'qr_transferencias', label: 'Excedente QR/Transferencias' },
     { value: 'datafono', label: 'Excedente Datafono' }
+  ];
+
+  const subtiposTransferencia = [
+    { value: 'nequi', label: 'Nequi' },
+    { value: 'daviplata', label: 'Daviplata' },
+    { value: 'qr', label: 'QR' }
   ];
 
   const formatCurrency = (value) => {
@@ -48,35 +55,32 @@ const App = () => {
   const totalCoins = calculateTotal(coins);
   const totalBills = calculateTotal(bills);
   const totalGeneral = totalCoins + totalBills;
-
-  // Calcular total de excedentes
   const totalExcedentes = excedentes.reduce((sum, exc) => sum + (parseInt(exc.valor) || 0), 0);
 
-  // Agregar un nuevo excedente
   const agregarExcedente = () => {
     if (excedentes.length < 3) {
-      setExcedentes([
-        ...excedentes,
-        { id: Date.now(), tipo: 'efectivo', valor: 0 }
-      ]);
+      setExcedentes([...excedentes, { id: Date.now(), tipo: 'efectivo', subtipo: '', valor: '' }]);
     }
   };
 
-  // Eliminar un excedente
   const eliminarExcedente = (id) => {
     if (excedentes.length > 1) {
       setExcedentes(excedentes.filter(exc => exc.id !== id));
     }
   };
 
-  // Actualizar tipo de excedente
   const actualizarTipoExcedente = (id, nuevoTipo) => {
     setExcedentes(excedentes.map(exc =>
-      exc.id === id ? { ...exc, tipo: nuevoTipo } : exc
+      exc.id === id ? { ...exc, tipo: nuevoTipo, subtipo: nuevoTipo === 'qr_transferencias' ? 'nequi' : '' } : exc
     ));
   };
 
-  // Actualizar valor de excedente
+  const actualizarSubtipoExcedente = (id, nuevoSubtipo) => {
+    setExcedentes(excedentes.map(exc =>
+      exc.id === id ? { ...exc, subtipo: nuevoSubtipo } : exc
+    ));
+  };
+
   const actualizarValorExcedente = (id, nuevoValor) => {
     setExcedentes(excedentes.map(exc =>
       exc.id === id ? { ...exc, valor: nuevoValor } : exc
@@ -88,38 +92,51 @@ const App = () => {
     setError(null);
 
     try {
-      // Agrupar excedentes por tipo
       const excedentesPorTipo = {
         excedente_efectivo: 0,
-        excedente_qr_transferencias: 0,
-        excedente_datafono: 0
+        excedente_datafono: 0,
+        excedente_nequi: 0,
+        excedente_daviplata: 0,
+        excedente_qr: 0
       };
+
+      const excedentesDetalle = [];
 
       excedentes.forEach(exc => {
         const valor = parseInt(exc.valor) || 0;
-        if (exc.tipo === 'efectivo') {
-          excedentesPorTipo.excedente_efectivo += valor;
-        } else if (exc.tipo === 'qr_transferencias') {
-          excedentesPorTipo.excedente_qr_transferencias += valor;
-        } else if (exc.tipo === 'datafono') {
-          excedentesPorTipo.excedente_datafono += valor;
+        if (valor > 0) {
+          if (exc.tipo === 'efectivo') {
+            excedentesPorTipo.excedente_efectivo += valor;
+            excedentesDetalle.push({ tipo: 'Efectivo', valor });
+          } else if (exc.tipo === 'datafono') {
+            excedentesPorTipo.excedente_datafono += valor;
+            excedentesDetalle.push({ tipo: 'Datafono', valor });
+          } else if (exc.tipo === 'qr_transferencias') {
+            if (exc.subtipo === 'nequi') {
+              excedentesPorTipo.excedente_nequi += valor;
+              excedentesDetalle.push({ tipo: 'Transferencia', subtipo: 'Nequi', valor });
+            } else if (exc.subtipo === 'daviplata') {
+              excedentesPorTipo.excedente_daviplata += valor;
+              excedentesDetalle.push({ tipo: 'Transferencia', subtipo: 'Daviplata', valor });
+            } else if (exc.subtipo === 'qr') {
+              excedentesPorTipo.excedente_qr += valor;
+              excedentesDetalle.push({ tipo: 'Transferencia', subtipo: 'QR', valor });
+            }
+          }
         }
       });
 
       const payload = {
         date,
-        coins: Object.fromEntries(
-          Object.entries(coins).map(([k, v]) => [k, parseInt(v) || 0])
-        ),
-        bills: Object.fromEntries(
-          Object.entries(bills).map(([k, v]) => [k, parseInt(v) || 0])
-        ),
-        excedente: totalExcedentes, // Total general de excedentes
-        excedente_efectivo: excedentesPorTipo.excedente_efectivo,
-        excedente_qr_transferencias: excedentesPorTipo.excedente_qr_transferencias,
-        excedente_datafono: excedentesPorTipo.excedente_datafono,
+        coins: Object.fromEntries(Object.entries(coins).map(([k, v]) => [k, parseInt(v) || 0])),
+        bills: Object.fromEntries(Object.entries(bills).map(([k, v]) => [k, parseInt(v) || 0])),
+        excedente: totalExcedentes,
+        ...excedentesPorTipo,
+        excedentes_detalle: excedentesDetalle,
         gastos_operativos: parseInt(adjustments.gastos_operativos) || 0,
-        prestamos: parseInt(adjustments.prestamos) || 0
+        gastos_operativos_nota: adjustments.gastos_operativos_nota || '',
+        prestamos: parseInt(adjustments.prestamos) || 0,
+        prestamos_nota: adjustments.prestamos_nota || ''
       };
 
       const response = await fetch('https://cierre-caja-api.onrender.com/sum_payments', {
@@ -131,6 +148,9 @@ const App = () => {
       if (!response.ok) throw new Error('Error en la respuesta del servidor');
 
       const data = await response.json();
+      data.excedentes_detalle = excedentesDetalle;
+      data.gastos_operativos_nota = adjustments.gastos_operativos_nota;
+      data.prestamos_nota = adjustments.prestamos_nota;
       setResults(data);
     } catch (err) {
       setError(err.message);
@@ -140,10 +160,10 @@ const App = () => {
   };
 
   const handleReset = () => {
-    setCoins({ '50': 0, '100': 0, '200': 0, '500': 0, '1000': 0 });
-    setBills({ '2000': 0, '5000': 0, '10000': 0, '20000': 0, '50000': 0, '100000': 0 });
-    setExcedentes([{ id: 1, tipo: 'efectivo', valor: 0 }]);
-    setAdjustments({ gastos_operativos: 0, prestamos: 0 });
+    setCoins({ '50': '', '100': '', '200': '', '500': '', '1000': '' });
+    setBills({ '2000': '', '5000': '', '10000': '', '20000': '', '50000': '', '100000': '' });
+    setExcedentes([{ id: 1, tipo: 'efectivo', subtipo: '', valor: '' }]);
+    setAdjustments({ gastos_operativos: '', gastos_operativos_nota: '', prestamos: '', prestamos_nota: '' });
     setResults(null);
     setError(null);
   };
@@ -151,18 +171,20 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-3 sm:mb-4 shadow-lg">
-            <DollarSign className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+          <div className="inline-flex items-center justify-center mb-3 sm:mb-4">
+            <div className="bg-gray-900 rounded-3xl p-6 sm:p-8 shadow-2xl">
+              <div className="text-white text-4xl sm:text-5xl font-bold tracking-widest" style={{ fontFamily: 'Arial, sans-serif', letterSpacing: '0.3em' }}>
+                KOAJ
+              </div>
+            </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 px-2">Cierre Diario de Caja Puerto Carreño</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 px-2">Cierre Diario de Caja</h1>
+          <p className="text-lg sm:text-xl text-blue-600 font-semibold mb-1">Puerto Carreño</p>
           <p className="text-sm sm:text-base text-gray-600">Sistema de arqueo y conciliación</p>
         </div>
 
-        {/* Main Form */}
         <div className="space-y-4 sm:space-y-6">
-          {/* Date Selection */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -178,7 +200,6 @@ const App = () => {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Coins Section */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
@@ -195,8 +216,9 @@ const App = () => {
                       min="0"
                       value={coins[denom]}
                       onChange={(e) => setCoins({ ...coins, [denom]: e.target.value })}
+                      onFocus={(e) => e.target.select()}
                       className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm sm:text-base"
-                      placeholder="Cantidad"
+                      placeholder="0"
                     />
                     <span className="w-20 sm:w-28 text-right text-xs sm:text-sm font-semibold text-gray-900">
                       {formatCurrency(parseInt(denom) * (parseInt(coins[denom]) || 0))}
@@ -212,7 +234,6 @@ const App = () => {
               </div>
             </div>
 
-            {/* Bills Section */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -229,8 +250,9 @@ const App = () => {
                       min="0"
                       value={bills[denom]}
                       onChange={(e) => setBills({ ...bills, [denom]: e.target.value })}
+                      onFocus={(e) => e.target.select()}
                       className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
-                      placeholder="Cantidad"
+                      placeholder="0"
                     />
                     <span className="w-20 sm:w-28 text-right text-xs sm:text-sm font-semibold text-gray-900">
                       {formatCurrency(parseInt(denom) * (parseInt(bills[denom]) || 0))}
@@ -247,14 +269,12 @@ const App = () => {
             </div>
           </div>
 
-          {/* Adjustments */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Ajustes y Movimientos</h2>
             </div>
             
-            {/* Excedentes Dinámicos */}
             <div className="mb-4 sm:mb-6">
               <div className="flex items-center justify-between mb-3">
                 <label className="block text-sm sm:text-base font-medium text-gray-700">
@@ -273,39 +293,53 @@ const App = () => {
               </div>
               
               <div className="space-y-3">
-                {excedentes.map((excedente, index) => (
-                  <div key={excedente.id} className="flex flex-col sm:flex-row gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex-1">
-                      <select
-                        value={excedente.tipo}
-                        onChange={(e) => actualizarTipoExcedente(excedente.id, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                      >
-                        {tiposExcedente.map(tipo => (
-                          <option key={tipo.value} value={tipo.value}>
-                            {tipo.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        value={excedente.valor}
-                        onChange={(e) => actualizarValorExcedente(excedente.id, e.target.value)}
-                        className="flex-1 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                        placeholder="Valor"
-                      />
-                      {excedentes.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => eliminarExcedente(excedente.id)}
-                          className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                {excedentes.map((excedente) => (
+                  <div key={excedente.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="flex-1">
+                        <select
+                          value={excedente.tipo}
+                          onChange={(e) => actualizarTipoExcedente(excedente.id, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
+                          {tiposExcedente.map(tipo => (
+                            <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {excedente.tipo === 'qr_transferencias' && (
+                        <div className="flex-1">
+                          <select
+                            value={excedente.subtipo}
+                            onChange={(e) => actualizarSubtipoExcedente(excedente.id, e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                          >
+                            {subtiposTransferencia.map(sub => (
+                              <option key={sub.value} value={sub.value}>{sub.label}</option>
+                            ))}
+                          </select>
+                        </div>
                       )}
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={excedente.valor}
+                          onChange={(e) => actualizarValorExcedente(excedente.id, e.target.value)}
+                          onFocus={(e) => e.target.select()}
+                          className="flex-1 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                          placeholder="0"
+                        />
+                        {excedentes.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => eliminarExcedente(excedente.id)}
+                            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -321,7 +355,6 @@ const App = () => {
               )}
             </div>
 
-            {/* Otros Ajustes */}
             <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -331,9 +364,20 @@ const App = () => {
                   type="number"
                   value={adjustments.gastos_operativos}
                   onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  onFocus={(e) => e.target.select()}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
                   placeholder="0"
                 />
+                <div className="relative">
+                  <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={adjustments.gastos_operativos_nota}
+                    onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos_nota: e.target.value })}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    placeholder="Nota: ej. Compra de papelería..."
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -343,14 +387,24 @@ const App = () => {
                   type="number"
                   value={adjustments.prestamos}
                   onChange={(e) => setAdjustments({ ...adjustments, prestamos: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  onFocus={(e) => e.target.select()}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
                   placeholder="0"
                 />
+                <div className="relative">
+                  <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={adjustments.prestamos_nota}
+                    onChange={(e) => setAdjustments({ ...adjustments, prestamos_nota: e.target.value })}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    placeholder="Nota: ej. Préstamo a María..."
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Total Display */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
               <span className="text-lg sm:text-xl font-semibold">Total en Caja:</span>
@@ -358,7 +412,6 @@ const App = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={handleSubmit}
@@ -386,7 +439,6 @@ const App = () => {
           </div>
         </div>
 
-        {/* Error Display */}
         {error && (
           <div className="mt-4 sm:mt-6 bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
             <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -397,13 +449,11 @@ const App = () => {
           </div>
         )}
 
-        {/* Results Display */}
         {results && (
           <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Resultados del Cierre</h2>
               
-              {/* Alegra Sales Summary */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-100">
                   <div className="text-xs sm:text-sm text-blue-600 font-medium mb-1">Efectivo</div>
@@ -436,8 +486,7 @@ const App = () => {
                 <div className="text-2xl sm:text-4xl font-bold">{results.alegra.total_sale.formatted}</div>
               </div>
 
-              {/* Cash Count Details */}
-              <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
                 <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
                   <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 sm:mb-3">Base de Caja</h3>
                   <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
@@ -473,21 +522,43 @@ const App = () => {
                 </div>
               </div>
 
-              {/* Adjustments Summary */}
-              <div className="mt-4 sm:mt-6 bg-yellow-50 rounded-xl p-3 sm:p-4 border border-yellow-100">
+              <div className="bg-yellow-50 rounded-xl p-3 sm:p-4 border border-yellow-100">
                 <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 sm:mb-3">Ajustes Aplicados</h3>
+                
+                {results.excedentes_detalle && results.excedentes_detalle.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-xs font-semibold text-gray-700 mb-2">Excedentes:</div>
+                    <div className="space-y-1">
+                      {results.excedentes_detalle.map((exc, idx) => (
+                        <div key={idx} className="flex justify-between text-xs">
+                          <span className="text-gray-600">
+                            {exc.tipo} {exc.subtipo && `(${exc.subtipo})`}:
+                          </span>
+                          <span className="font-semibold">{formatCurrency(exc.valor)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                   <div>
-                    <div className="text-gray-600 mb-1">Excedente</div>
+                    <div className="text-gray-600 mb-1">Total Excedente</div>
                     <div className="font-semibold">{results.cash_count.adjustments.excedente_formatted}</div>
                   </div>
                   <div>
                     <div className="text-gray-600 mb-1">Gastos Operativos</div>
                     <div className="font-semibold">{results.cash_count.adjustments.gastos_operativos_formatted}</div>
+                    {results.gastos_operativos_nota && (
+                      <div className="text-xs text-gray-500 mt-1 italic">Nota: {results.gastos_operativos_nota}</div>
+                    )}
                   </div>
                   <div>
                     <div className="text-gray-600 mb-1">Préstamos</div>
                     <div className="font-semibold">{results.cash_count.adjustments.prestamos_formatted}</div>
+                    {results.prestamos_nota && (
+                      <div className="text-xs text-gray-500 mt-1 italic">Nota: {results.prestamos_nota}</div>
+                    )}
                   </div>
                   <div>
                     <div className="text-gray-600 mb-1">Venta Efectivo Alegra</div>
@@ -496,7 +567,6 @@ const App = () => {
                 </div>
               </div>
 
-              {/* Footer Info */}
               <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 text-xs sm:text-sm text-gray-600">
                 <div className="flex flex-col sm:flex-row justify-between gap-2">
                   <span>Usuario: {results.username_used}</span>
