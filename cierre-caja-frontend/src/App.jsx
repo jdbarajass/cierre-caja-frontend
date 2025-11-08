@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText } from 'lucide-react';
 
 const App = () => {
+  // BASE de la API: se inyecta en build por Vite (prefijo VITE_)
+  const API_BASE = import.meta.env.VITE_API_URL || "https://cierre-caja-api.onrender.com"|| "http://localhost:5000";
+
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -37,6 +40,13 @@ const App = () => {
     { value: 'daviplata', label: 'Daviplata' },
     { value: 'qr', label: 'QR' }
   ];
+
+  // Función para validar y limpiar entrada numérica
+  const handleNumericInput = (value) => {
+    // Remover cualquier caracter que no sea número
+    const cleaned = value.replace(/[^0-9]/g, '');
+    return cleaned;
+  };
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
@@ -82,8 +92,9 @@ const App = () => {
   };
 
   const actualizarValorExcedente = (id, nuevoValor) => {
+    const valorLimpio = handleNumericInput(nuevoValor);
     setExcedentes(excedentes.map(exc =>
-      exc.id === id ? { ...exc, valor: nuevoValor } : exc
+      exc.id === id ? { ...exc, valor: valorLimpio } : exc
     ));
   };
 
@@ -139,13 +150,19 @@ const App = () => {
         prestamos_nota: adjustments.prestamos_nota || ''
       };
 
-      const response = await fetch('https://cierre-caja-api.onrender.com/sum_payments', {
+      // <-- Aquí usamos API_BASE en lugar de hardcodear la URL
+      const response = await fetch(`${API_BASE}/sum_payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error('Error en la respuesta del servidor');
+      if (!response.ok) {
+        // Intenta leer el body si hay más info
+        let text = '';
+        try { text = await response.text(); } catch (e) { /* ignore */ }
+        throw new Error(`Error en la respuesta del servidor: ${response.status} ${response.statusText} ${text}`);
+      }
 
       const data = await response.json();
       data.excedentes_detalle = excedentesDetalle;
@@ -153,7 +170,8 @@ const App = () => {
       data.prestamos_nota = adjustments.prestamos_nota;
       setResults(data);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError(err.message || 'Error desconocido');
     } finally {
       setLoading(false);
     }
@@ -212,10 +230,10 @@ const App = () => {
                       ${parseInt(denom).toLocaleString()}
                     </label>
                     <input
-                      type="number"
-                      min="0"
+                      type="text"
+                      inputMode="numeric"
                       value={coins[denom]}
-                      onChange={(e) => setCoins({ ...coins, [denom]: e.target.value })}
+                      onChange={(e) => setCoins({ ...coins, [denom]: handleNumericInput(e.target.value) })}
                       onFocus={(e) => e.target.select()}
                       className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm sm:text-base"
                       placeholder="0"
@@ -246,10 +264,10 @@ const App = () => {
                       ${parseInt(denom).toLocaleString()}
                     </label>
                     <input
-                      type="number"
-                      min="0"
+                      type="text"
+                      inputMode="numeric"
                       value={bills[denom]}
-                      onChange={(e) => setBills({ ...bills, [denom]: e.target.value })}
+                      onChange={(e) => setBills({ ...bills, [denom]: handleNumericInput(e.target.value) })}
                       onFocus={(e) => e.target.select()}
                       className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                       placeholder="0"
@@ -322,8 +340,8 @@ const App = () => {
                       )}
                       <div className="flex gap-2">
                         <input
-                          type="number"
-                          min="0"
+                          type="text"
+                          inputMode="numeric"
                           value={excedente.valor}
                           onChange={(e) => actualizarValorExcedente(excedente.id, e.target.value)}
                           onFocus={(e) => e.target.select()}
@@ -361,9 +379,10 @@ const App = () => {
                   Gastos Operativos
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={adjustments.gastos_operativos}
-                  onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos: e.target.value })}
+                  onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos: handleNumericInput(e.target.value) })}
                   onFocus={(e) => e.target.select()}
                   className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
                   placeholder="0"
@@ -384,9 +403,10 @@ const App = () => {
                   Préstamos
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={adjustments.prestamos}
-                  onChange={(e) => setAdjustments({ ...adjustments, prestamos: e.target.value })}
+                  onChange={(e) => setAdjustments({ ...adjustments, prestamos: handleNumericInput(e.target.value) })}
                   onFocus={(e) => e.target.select()}
                   className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
                   placeholder="0"
