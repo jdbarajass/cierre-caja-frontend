@@ -206,8 +206,8 @@ Verás un mensaje similar a:
 Por defecto, las credenciales están definidas en `src/contexts/AuthContext.jsx`:
 
 ```javascript
-Email: ventaspuertocarreno@gmail.com
-Password: VentasCarreno2025.*
+Email: @gmail.com
+Password: *****
 ```
 
 > ⚠️ **Importante**: Estas credenciales son de ejemplo. Para producción, debes implementar un sistema de autenticación real con backend.
