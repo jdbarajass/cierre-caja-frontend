@@ -117,6 +117,121 @@ const Dashboard = () => {
     ));
   };
 
+  // Función para distribuir monedas y billetes entre caja base y consignación
+  const calcularDistribucionCaja = (coins, bills) => {
+    const CAJA_BASE = 450000;
+
+    // Calcular totales
+    const totalCoins = Object.entries(coins).reduce((sum, [denom, qty]) => {
+      return sum + (parseInt(denom) * parseInt(qty || 0));
+    }, 0);
+
+    const totalBills = Object.entries(bills).reduce((sum, [denom, qty]) => {
+      return sum + (parseInt(denom) * parseInt(qty || 0));
+    }, 0);
+
+    const totalContado = totalCoins + totalBills;
+
+    // Si el total es menor o igual a la base, todo queda en caja
+    if (totalContado <= CAJA_BASE) {
+      return {
+        cajaBase: {
+          coins: { ...coins },
+          bills: { ...bills },
+          totalCoins,
+          totalBills,
+          total: totalContado
+        },
+        consignacion: {
+          coins: { '50': 0, '100': 0, '200': 0, '500': 0, '1000': 0 },
+          bills: { '2000': 0, '5000': 0, '10000': 0, '20000': 0, '50000': 0, '100000': 0 },
+          totalCoins: 0,
+          totalBills: 0,
+          total: 0
+        }
+      };
+    }
+
+    // Si hay que dividir, priorizamos billetes grandes para consignación
+    let montoRestante = totalContado;
+    let montoBase = CAJA_BASE;
+
+    const cajaBaseCoins = {};
+    const cajaBaseBills = {};
+    const consignacionCoins = {};
+    const consignacionBills = {};
+
+    // Inicializar todos en 0
+    Object.keys(coins).forEach(denom => {
+      cajaBaseCoins[denom] = 0;
+      consignacionCoins[denom] = 0;
+    });
+    Object.keys(bills).forEach(denom => {
+      cajaBaseBills[denom] = 0;
+      consignacionBills[denom] = 0;
+    });
+
+    // Estrategia: Llenar consignación con billetes grandes primero
+    const billetesOrdenados = ['100000', '50000', '20000', '10000', '5000', '2000'];
+
+    for (const denom of billetesOrdenados) {
+      const cantidad = parseInt(bills[denom] || 0);
+      const valorDenom = parseInt(denom);
+
+      if (cantidad > 0) {
+        let cantidadParaConsignar = 0;
+
+        // Calcular cuántos de este billete van para consignación
+        while (cantidadParaConsignar < cantidad && montoRestante - valorDenom >= CAJA_BASE) {
+          cantidadParaConsignar++;
+          montoRestante -= valorDenom;
+        }
+
+        consignacionBills[denom] = cantidadParaConsignar;
+        cajaBaseBills[denom] = cantidad - cantidadParaConsignar;
+      }
+    }
+
+    // Las monedas todas van para caja base
+    Object.entries(coins).forEach(([denom, qty]) => {
+      cajaBaseCoins[denom] = parseInt(qty || 0);
+    });
+
+    // Calcular totales finales
+    const cajaBaseTotalCoins = Object.entries(cajaBaseCoins).reduce((sum, [denom, qty]) => {
+      return sum + (parseInt(denom) * qty);
+    }, 0);
+
+    const cajaBaseTotalBills = Object.entries(cajaBaseBills).reduce((sum, [denom, qty]) => {
+      return sum + (parseInt(denom) * qty);
+    }, 0);
+
+    const consignacionTotalCoins = Object.entries(consignacionCoins).reduce((sum, [denom, qty]) => {
+      return sum + (parseInt(denom) * qty);
+    }, 0);
+
+    const consignacionTotalBills = Object.entries(consignacionBills).reduce((sum, [denom, qty]) => {
+      return sum + (parseInt(denom) * qty);
+    }, 0);
+
+    return {
+      cajaBase: {
+        coins: cajaBaseCoins,
+        bills: cajaBaseBills,
+        totalCoins: cajaBaseTotalCoins,
+        totalBills: cajaBaseTotalBills,
+        total: cajaBaseTotalCoins + cajaBaseTotalBills
+      },
+      consignacion: {
+        coins: consignacionCoins,
+        bills: consignacionBills,
+        totalCoins: consignacionTotalCoins,
+        totalBills: consignacionTotalBills,
+        total: consignacionTotalBills + consignacionTotalCoins
+      }
+    };
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -185,6 +300,10 @@ const Dashboard = () => {
       data.gastos_operativos_nota = adjustments.gastos_operativos_nota;
       data.prestamos_nota = adjustments.prestamos_nota;
       data.metodos_pago_registrados = payload.metodos_pago;
+
+      // Calcular distribución de monedas y billetes para caja base y consignación
+      const distribucion = calcularDistribucionCaja(coins, bills);
+      data.distribucion_caja = distribucion;
 
       setResults(data);
 
@@ -808,6 +927,214 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Distribución Detallada de Caja */}
+              {results.distribucion_caja && (
+                <div className="mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <DollarSign className="w-6 h-6 text-blue-600" />
+                    Distribución de Monedas y Billetes
+                  </h2>
+
+                  <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+                    {/* Caja Base - 450,000 */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-blue-900">💰 Caja Base (450,000)</h3>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-blue-900">
+                            {formatCurrency(results.distribucion_caja.cajaBase.total)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Monedas en Caja Base */}
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                          Monedas
+                        </h4>
+                        <div className="bg-white rounded-lg p-3 space-y-1.5">
+                          {Object.entries(results.distribucion_caja.cajaBase.coins).map(([denom, qty]) => {
+                            const cantidad = parseInt(qty || 0);
+                            const valor = cantidad * parseInt(denom);
+                            if (cantidad === 0) return null;
+                            return (
+                              <div key={denom} className="flex items-center text-xs">
+                                <span className="text-gray-600 w-20">
+                                  ${parseInt(denom).toLocaleString()}:
+                                </span>
+                                <span className="text-gray-900 font-semibold w-16 text-right">
+                                  {cantidad} un.
+                                </span>
+                                <span className="flex-1 mx-2 border-b border-dotted border-gray-300"></span>
+                                <span className="font-semibold text-gray-900 bg-yellow-50 px-2 py-0.5 rounded">
+                                  {formatCurrency(valor)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                            <span className="text-xs font-semibold text-gray-700">Subtotal Monedas:</span>
+                            <span className="text-sm font-bold text-yellow-600">
+                              {formatCurrency(results.distribucion_caja.cajaBase.totalCoins)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Billetes en Caja Base */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                          Billetes
+                        </h4>
+                        <div className="bg-white rounded-lg p-3 space-y-1.5">
+                          {Object.entries(results.distribucion_caja.cajaBase.bills).map(([denom, qty]) => {
+                            const cantidad = parseInt(qty || 0);
+                            const valor = cantidad * parseInt(denom);
+                            if (cantidad === 0) return null;
+                            return (
+                              <div key={denom} className="flex items-center text-xs">
+                                <span className="text-gray-600 w-20">
+                                  ${parseInt(denom).toLocaleString()}:
+                                </span>
+                                <span className="text-gray-900 font-semibold w-16 text-right">
+                                  {cantidad} un.
+                                </span>
+                                <span className="flex-1 mx-2 border-b border-dotted border-gray-300"></span>
+                                <span className="font-semibold text-gray-900 bg-green-50 px-2 py-0.5 rounded">
+                                  {formatCurrency(valor)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                            <span className="text-xs font-semibold text-gray-700">Subtotal Billetes:</span>
+                            <span className="text-sm font-bold text-green-600">
+                              {formatCurrency(results.distribucion_caja.cajaBase.totalBills)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Para Consignación */}
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 sm:p-6 border-2 border-emerald-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-emerald-900">🏦 Para Consignación</h3>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-emerald-900">
+                            {formatCurrency(results.distribucion_caja.consignacion.total)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Monedas para Consignación */}
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-emerald-800 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                          Monedas
+                        </h4>
+                        <div className="bg-white rounded-lg p-3 space-y-1.5">
+                          {Object.entries(results.distribucion_caja.consignacion.coins).map(([denom, qty]) => {
+                            const cantidad = parseInt(qty || 0);
+                            const valor = cantidad * parseInt(denom);
+                            if (cantidad === 0) return null;
+                            return (
+                              <div key={denom} className="flex items-center text-xs">
+                                <span className="text-gray-600 w-20">
+                                  ${parseInt(denom).toLocaleString()}:
+                                </span>
+                                <span className="text-gray-900 font-semibold w-16 text-right">
+                                  {cantidad} un.
+                                </span>
+                                <span className="flex-1 mx-2 border-b border-dotted border-gray-300"></span>
+                                <span className="font-semibold text-gray-900 bg-yellow-50 px-2 py-0.5 rounded">
+                                  {formatCurrency(valor)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {results.distribucion_caja.consignacion.totalCoins === 0 ? (
+                            <div className="text-xs text-gray-500 italic text-center py-2">
+                              No hay monedas para consignar
+                            </div>
+                          ) : (
+                            <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                              <span className="text-xs font-semibold text-gray-700">Subtotal Monedas:</span>
+                              <span className="text-sm font-bold text-yellow-600">
+                                {formatCurrency(results.distribucion_caja.consignacion.totalCoins)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Billetes para Consignación */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-emerald-800 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                          Billetes
+                        </h4>
+                        <div className="bg-white rounded-lg p-3 space-y-1.5">
+                          {Object.entries(results.distribucion_caja.consignacion.bills).map(([denom, qty]) => {
+                            const cantidad = parseInt(qty || 0);
+                            const valor = cantidad * parseInt(denom);
+                            if (cantidad === 0) return null;
+                            return (
+                              <div key={denom} className="flex items-center text-xs">
+                                <span className="text-gray-600 w-20">
+                                  ${parseInt(denom).toLocaleString()}:
+                                </span>
+                                <span className="text-gray-900 font-semibold w-16 text-right">
+                                  {cantidad} un.
+                                </span>
+                                <span className="flex-1 mx-2 border-b border-dotted border-gray-300"></span>
+                                <span className="font-semibold text-gray-900 bg-green-50 px-2 py-0.5 rounded">
+                                  {formatCurrency(valor)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {results.distribucion_caja.consignacion.totalBills === 0 ? (
+                            <div className="text-xs text-gray-500 italic text-center py-2">
+                              No hay billetes para consignar
+                            </div>
+                          ) : (
+                            <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                              <span className="text-xs font-semibold text-gray-700">Subtotal Billetes:</span>
+                              <span className="text-sm font-bold text-green-600">
+                                {formatCurrency(results.distribucion_caja.consignacion.totalBills)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resumen Total */}
+                  <div className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 text-white">
+                    <div className="grid sm:grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-xs font-medium opacity-90 mb-1">Total en Caja Base</div>
+                        <div className="text-xl font-bold">{formatCurrency(results.distribucion_caja.cajaBase.total)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium opacity-90 mb-1">Total para Consignar</div>
+                        <div className="text-xl font-bold">{formatCurrency(results.distribucion_caja.consignacion.total)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium opacity-90 mb-1">Total Contado</div>
+                        <div className="text-xl font-bold">
+                          {formatCurrency(results.distribucion_caja.cajaBase.total + results.distribucion_caja.consignacion.total)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Ajustes Aplicados */}
               <div className="bg-yellow-50 rounded-xl p-3 sm:p-4 border border-yellow-100">
