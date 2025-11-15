@@ -1091,39 +1091,82 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Resumen Alegra - 3 columnas horizontales */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
-                {/* Efectivo Alegra */}
-                <div className="bg-blue-50 rounded-lg p-2 sm:p-3 border border-blue-100">
-                  <div className="text-xs text-blue-600 font-medium mb-1">Efectivo Alegra</div>
-                  <div className="text-base sm:text-lg font-bold text-blue-900">
-                    {results.alegra.results.cash.formatted}
+              {/* Resumen Alegra - 2 columnas alineadas con secciones superiores */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                {/* Columna Izquierda: Efectivo y Transferencia Alegra lado a lado */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  {/* Efectivo Alegra */}
+                  <div className="bg-blue-50 rounded-lg p-2 sm:p-3 border border-blue-100">
+                    <div className="text-xs text-blue-600 font-medium mb-2">Efectivo Alegra</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="text-xs text-gray-600">Efectivo:</div>
+                        <div className="text-sm font-bold text-blue-900">
+                          {results.alegra.results.cash.formatted}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-600">A Consignar:</div>
+                        <div className="text-sm font-bold text-green-700">
+                          {results.cash_count.consignar.efectivo_para_consignar_final_formatted}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transferencia Alegra */}
+                  <div className="bg-purple-50 rounded-lg p-2 sm:p-3 border border-purple-100">
+                    <div className="text-xs text-purple-600 font-medium mb-2">Transferencia Alegra</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="text-xs text-gray-600">Total:</div>
+                        <div className="text-sm font-bold text-purple-900">
+                          {results.alegra.results.transfer.formatted}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-600">Desglose:</div>
+                        <div className="text-xs space-y-0.5">
+                          {results.metodos_pago_registrados.nequi_luz_helena > 0 && (
+                            <div className="font-semibold">Nequi: {formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}</div>
+                          )}
+                          {results.metodos_pago_registrados.daviplata_jose > 0 && (
+                            <div className="font-semibold">Davi: {formatCurrency(results.metodos_pago_registrados.daviplata_jose)}</div>
+                          )}
+                          {results.metodos_pago_registrados.qr_julieth > 0 && (
+                            <div className="font-semibold">QR: {formatCurrency(results.metodos_pago_registrados.qr_julieth)}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Transferencia Alegra */}
-                <div className="bg-purple-50 rounded-lg p-2 sm:p-3 border border-purple-100">
-                  <div className="text-xs text-purple-600 font-medium mb-1">Transferencia Alegra</div>
-                  <div className="text-base sm:text-lg font-bold text-purple-900">
-                    {results.alegra.results.transfer.formatted}
-                  </div>
-                </div>
-
-                {/* Datafono Alegra */}
+                {/* Columna Derecha: Datafono Alegra */}
                 <div className="bg-gray-50 rounded-lg p-2 sm:p-3 border border-gray-300">
-                  <div className="text-xs text-gray-700 font-medium mb-1">Datafono Alegra</div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div className="bg-green-50 rounded p-1.5 border border-green-100">
-                      <div className="text-xs text-green-600">T. Débito</div>
-                      <div className="text-xs sm:text-sm font-bold text-green-900">
+                  <div className="text-xs text-gray-700 font-medium mb-2">Datafono Alegra</div>
+                  <div className={`grid ${results.metodos_pago_registrados.addi_datafono > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 text-xs`}>
+                    <div>
+                      <div className="text-green-600">T. Débito:</div>
+                      <div className="font-bold text-green-900">
                         {results.alegra.results['debit-card'].formatted}
                       </div>
                     </div>
-                    <div className="bg-orange-50 rounded p-1.5 border border-orange-100">
-                      <div className="text-xs text-orange-600">T. Crédito</div>
-                      <div className="text-xs sm:text-sm font-bold text-orange-900">
+                    <div>
+                      <div className="text-orange-600">T. Crédito:</div>
+                      <div className="font-bold text-orange-900">
                         {results.alegra.results['credit-card'].formatted}
                       </div>
+                    </div>
+                    {results.metodos_pago_registrados.addi_datafono > 0 && (
+                      <div>
+                        <div className="text-gray-600">Addi:</div>
+                        <div className="font-semibold">{formatCurrency(results.metodos_pago_registrados.addi_datafono)}</div>
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-gray-700 font-medium">Total Datafono:</div>
+                      <div className="font-bold text-green-700">{formatCurrency(results.metodos_pago_registrados.total_datafono_real)}</div>
                     </div>
                   </div>
                 </div>
