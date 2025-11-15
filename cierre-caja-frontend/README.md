@@ -390,34 +390,150 @@ cierre-caja-frontend/
 
 ## 🌐 Deployment
 
-### Build para Producción
+### 🏗️ Build para Producción
+
+El servidor de desarrollo (`npm run dev`) sirve los archivos directamente desde `src/` y **NO** usa la carpeta `dist/`. Para desplegar en producción, debes generar el build optimizado:
 
 ```bash
 npm run build
 ```
 
-Esto generará una carpeta `dist/` optimizada para producción.
+**¿Qué genera este comando?**
+- ✅ Crea/actualiza la carpeta `dist/` con archivos optimizados
+- ✅ Minifica JavaScript y CSS
+- ✅ Optimiza imágenes y assets
+- ✅ Incluye todas las dependencias (React, jsPDF, html2canvas, etc.)
+- ✅ Genera hashes únicos para cache-busting
 
-### Desplegar en PythonAnywhere
+**Estructura generada:**
+```
+dist/
+├── index.html              # Punto de entrada
+├── vite.svg                # Favicon
+└── assets/
+    ├── Dashboard-[hash].js     # Componente principal (incluye todas las funcionalidades)
+    ├── index-[hash].css        # Estilos compilados
+    ├── react-vendor-[hash].js  # Librería React
+    └── index.es-[hash].js      # Dependencias (jsPDF, html2canvas)
+```
 
-Si deseas desplegar en PythonAnywhere:
+> ⚠️ **IMPORTANTE**: Cada vez que hagas cambios en el código, debes ejecutar `npm run build` nuevamente para actualizar la carpeta `dist/`.
 
-1. **Crear el build**:
-   ```bash
-   npm run build
-   ```
+### 📤 Desplegar en PythonAnywhere
 
-2. **Añadir al repositorio** (opcional):
-   ```bash
-   git checkout -b deploy-dist
-   git add dist -f
-   git commit -m "Add production build for PythonAnywhere"
-   git push origin deploy-dist
-   ```
+PythonAnywhere sirve los archivos estáticos desde la carpeta `dist/`. Sigue estos pasos:
 
-3. **Subir a PythonAnywhere**: Sigue las instrucciones de PythonAnywhere para servir archivos estáticos
+#### 1. **Generar el build de producción**
 
-### Desplegar en Vercel/Netlify
+Desde la raíz del proyecto:
+
+```bash
+npm run build
+```
+
+Verifica que la carpeta `dist/` se haya actualizado correctamente:
+
+```bash
+ls -lh dist/
+```
+
+Deberías ver archivos con la fecha y hora actuales.
+
+#### 2. **Subir la carpeta `dist/` a PythonAnywhere**
+
+Tienes varias opciones:
+
+**Opción A: Git (Recomendada para actualizaciones frecuentes)**
+
+```bash
+# Crear rama específica para deployment
+git checkout -b deploy-dist
+
+# Forzar la inclusión de dist/ (normalmente está en .gitignore)
+git add dist -f
+
+# Hacer commit
+git commit -m "Build: Actualizar dist/ con últimos cambios"
+
+# Push a GitHub
+git push origin deploy-dist
+
+# Volver a la rama main
+git checkout main
+```
+
+En PythonAnywhere, haz pull de la rama `deploy-dist`.
+
+**Opción B: Upload manual (Archivos pequeños)**
+
+1. Comprimir la carpeta `dist/`: `dist.zip`
+2. Subir a PythonAnywhere vía web interface
+3. Descomprimir en el servidor
+
+**Opción C: rsync/scp (Recomendada para archivos grandes)**
+
+```bash
+scp -r dist/* usuario@pythonanywhere.com:/home/usuario/cierre-caja/
+```
+
+#### 3. **Configurar el servidor web**
+
+En PythonAnywhere, configura tu Web App para servir archivos estáticos:
+
+- **Source directory**: `/home/usuario/cierre-caja/dist`
+- **URL**: `/` (raíz del dominio)
+
+#### 4. **Reload del servidor**
+
+Después de subir los archivos, haz clic en **"Reload"** en la configuración de tu Web App.
+
+#### 5. **Verificar el despliegue**
+
+Visita tu dominio de PythonAnywhere y verifica que:
+- ✅ La aplicación carga correctamente
+- ✅ Los nuevos cambios son visibles
+- ✅ El botón "Generar PDF" funciona
+- ✅ La diferenciación visual está presente
+
+### ⚡ Flujo de Trabajo: Desarrollo → Producción
+
+```bash
+# 1. Hacer cambios en el código
+# ... editar archivos en src/ ...
+
+# 2. Probar en desarrollo
+npm run dev
+
+# 3. Generar build de producción
+npm run build
+
+# 4. Commit de cambios (NO incluir dist/)
+git add .
+git commit -m "feat: Descripción de los cambios"
+git push origin main
+
+# 5. Generar build para despliegue
+npm run build
+
+# 6. Desplegar a PythonAnywhere
+# ... subir carpeta dist/ según método elegido ...
+```
+
+> 💡 **Tip**: Automatiza este proceso con un script:
+
+```bash
+# deploy.sh
+#!/bin/bash
+echo "🏗️  Generando build de producción..."
+npm run build
+
+echo "📦 Build completado. Archivos en dist/"
+ls -lh dist/
+
+echo "✅ Listo para subir a PythonAnywhere"
+```
+
+### 🚀 Desplegar en Vercel/Netlify
 
 Estos servicios detectan automáticamente proyectos de Vite:
 
@@ -427,6 +543,11 @@ Estos servicios detectan automáticamente proyectos de Vite:
    - **Output directory**: `dist`
 3. Configura las variables de entorno (`VITE_API_URL`)
 4. Despliega
+
+**Ventajas**:
+- ✅ Build automático en cada push
+- ✅ No necesitas generar `dist/` manualmente
+- ✅ CDN global para mejor rendimiento
 
 ---
 
