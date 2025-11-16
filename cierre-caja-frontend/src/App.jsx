@@ -5,8 +5,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './components/Login';
 
-// Lazy loading del Dashboard para reducir el bundle inicial
+// Lazy loading del Dashboard y MonthlySales para reducir el bundle inicial
 const Dashboard = lazy(() => import('./components/Dashboard'));
+const MonthlySales = lazy(() => import('./components/MonthlySales'));
 
 // Componente de carga
 const LoadingFallback = () => (
@@ -27,14 +28,23 @@ const App = () => {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route
-                path="/"
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
                 }
               />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route
+                path="/monthly-sales"
+                element={
+                  <ProtectedRoute>
+                    <MonthlySales />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </Suspense>
         </Router>
