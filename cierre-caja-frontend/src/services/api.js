@@ -1,9 +1,12 @@
 import logger from '../utils/logger';
 
-// URLs de los backends (prioridad: local -> desplegado)
-const API_LOCAL = 'http://10.28.168.57:5000';
+// URLs de los backends (prioridad: locales -> desplegado)
+const API_LOCALS = [
+  'http://10.28.168.57:5000',
+  'http://localhost:5000'
+];
 const API_DEPLOYED = 'https://cierre-caja-api.onrender.com';
-const API_TIMEOUT = 15000; // 15 segundos de timeout para el backend local
+const API_TIMEOUT = 15000; // 15 segundos de timeout para los backends locales
 
 // Variable para almacenar qué backend está funcionando
 let workingApiBase = null;
@@ -66,10 +69,11 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
   // Si ya sabemos qué backend funciona, usar ese primero
   if (workingApiBase) {
     try {
+      const isLocal = API_LOCALS.includes(workingApiBase);
       response = await fetchWithTimeout(
         `${workingApiBase}${endpoint}`,
         fetchOptions,
-        workingApiBase === API_LOCAL ? API_TIMEOUT : 80000
+        isLocal ? API_TIMEOUT : 80000
       );
 
       // Si la respuesta es exitosa, retornarla
@@ -85,48 +89,23 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
     } catch (error) {
       logger.warn(`Error al conectar con ${workingApiBase}:`, error.message);
       lastError = error;
-      workingApiBase = null; // Resetear para intentar con ambos
+      workingApiBase = null; // Resetear para intentar con todos
     }
   }
 
-  // Intentar primero con el backend local
-  try {
-    logger.info('Intentando conectar con backend local:', API_LOCAL);
-    response = await fetchWithTimeout(
-      `${API_LOCAL}${endpoint}`,
-      fetchOptions,
-      API_TIMEOUT
-    );
-
-    // Si la conexión fue exitosa, guardar que el backend local funciona
-    workingApiBase = API_LOCAL;
-    logger.info('Conectado exitosamente con backend local');
-
-    // Si la respuesta es 401 (no autorizado), limpiar la sesión
-    if (response.status === 401) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('authUser');
-      window.location.href = '/login';
-      throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
-    }
-
-    return response;
-  } catch (localError) {
-    logger.warn('Backend local no disponible, intentando con backend desplegado...');
-    lastError = localError;
-
-    // Si falla el local, intentar con el desplegado
+  // Intentar con cada backend local
+  for (const localApi of API_LOCALS) {
     try {
-      logger.info('Intentando conectar con backend desplegado:', API_DEPLOYED);
+      logger.info('Intentando conectar con backend local:', localApi);
       response = await fetchWithTimeout(
-        `${API_DEPLOYED}${endpoint}`,
+        `${localApi}${endpoint}`,
         fetchOptions,
-        30000 // Timeout más largo para el backend desplegado (30 segundos)
+        API_TIMEOUT
       );
 
-      // Si la conexión fue exitosa, guardar que el backend desplegado funciona
-      workingApiBase = API_DEPLOYED;
-      logger.info('Conectado exitosamente con backend desplegado');
+      // Si la conexión fue exitosa, guardar que este backend local funciona
+      workingApiBase = localApi;
+      logger.info('Conectado exitosamente con backend local:', localApi);
 
       // Si la respuesta es 401 (no autorizado), limpiar la sesión
       if (response.status === 401) {
@@ -137,15 +116,45 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
       }
 
       return response;
-    } catch (deployedError) {
-      logger.error('Ambos backends fallaron:', {
-        local: lastError.message,
-        deployed: deployedError.message,
-      });
-      throw new Error(
-        'No se pudo conectar con ningún servidor. Por favor verifica tu conexión a internet.'
-      );
+    } catch (localError) {
+      logger.warn(`Backend local ${localApi} no disponible`);
+      lastError = localError;
+      // Continuar con el siguiente backend local
     }
+  }
+
+  // Si todos los backends locales fallaron, intentar con el desplegado
+  logger.warn('Todos los backends locales no disponibles, intentando con backend desplegado...');
+  try {
+    logger.info('Intentando conectar con backend desplegado:', API_DEPLOYED);
+    response = await fetchWithTimeout(
+      `${API_DEPLOYED}${endpoint}`,
+      fetchOptions,
+      30000 // Timeout más largo para el backend desplegado (30 segundos)
+    );
+
+    // Si la conexión fue exitosa, guardar que el backend desplegado funciona
+    workingApiBase = API_DEPLOYED;
+    logger.info('Conectado exitosamente con backend desplegado');
+
+    // Si la respuesta es 401 (no autorizado), limpiar la sesión
+    if (response.status === 401) {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('authUser');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+    }
+
+    return response;
+  } catch (deployedError) {
+    logger.error('Todos los backends fallaron:', {
+      locales: API_LOCALS.map(api => api).join(', '),
+      deployed: API_DEPLOYED,
+      lastError: deployedError.message,
+    });
+    throw new Error(
+      'No se pudo conectar con ningún servidor. Por favor verifica tu conexión a internet.'
+    );
   }
 };
 
