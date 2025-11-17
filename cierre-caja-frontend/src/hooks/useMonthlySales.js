@@ -30,7 +30,7 @@ export const useMonthlySales = (startDate = null, endDate = null) => {
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
 
-      const endpoint = `/monthly_sales${
+      const endpoint = `/api/monthly_sales${
         params.toString() ? '?' + params.toString() : ''
       }`;
 
