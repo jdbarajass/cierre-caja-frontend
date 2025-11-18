@@ -17,7 +17,29 @@ let workingApiBase = null;
  */
 const isLocalEnvironment = () => {
   const hostname = window.location.hostname;
-  return (
+
+  // PRIMERO: Verificar si es un dominio de producción conocido
+  // Si es un dominio de producción, SIEMPRE retornar false (no es local)
+  const productionDomains = [
+    'onrender.com',
+    'netlify.app',
+    'vercel.app',
+    'github.io',
+    'herokuapp.com',
+    'railway.app',
+    'fly.dev'
+  ];
+
+  const isProductionDomain = productionDomains.some(domain =>
+    hostname.endsWith(domain) || hostname.includes(domain)
+  );
+
+  if (isProductionDomain) {
+    return false; // Es producción, NO es local
+  }
+
+  // SEGUNDO: Verificar si es una IP/hostname local
+  const isLocal = (
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.startsWith('192.168.') ||
@@ -30,6 +52,8 @@ const isLocalEnvironment = () => {
     hostname.startsWith('172.30.') ||
     hostname.startsWith('172.31.')
   );
+
+  return isLocal;
 };
 
 /**
