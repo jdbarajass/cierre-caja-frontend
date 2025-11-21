@@ -1,61 +1,10 @@
 import { useState, useEffect } from 'react';
+import { authenticatedFetch } from '../services/api';
 import logger from '../utils/logger';
-
-// URLs de los backends (mismo orden de prioridad que en api.js)
-const API_LOCALS = [
-  'http://10.28.168.57:5000',
-  'http://localhost:5000'
-];
-const API_DEPLOYED = 'https://cierre-caja-api.onrender.com';
-
-/**
- * Detecta si el frontend está corriendo en un entorno local
- * @returns {boolean} - true si es local, false si está desplegado
- */
-const isLocalEnvironment = () => {
-  const hostname = window.location.hostname;
-
-  // PRIMERO: Verificar si es un dominio de producción conocido
-  // Si es un dominio de producción, SIEMPRE retornar false (no es local)
-  const productionDomains = [
-    'onrender.com',
-    'netlify.app',
-    'vercel.app',
-    'github.io',
-    'herokuapp.com',
-    'railway.app',
-    'fly.dev'
-  ];
-
-  const isProductionDomain = productionDomains.some(domain =>
-    hostname.endsWith(domain) || hostname.includes(domain)
-  );
-
-  if (isProductionDomain) {
-    return false; // Es producción, NO es local
-  }
-
-  // SEGUNDO: Verificar si es una IP/hostname local
-  const isLocal = (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname.startsWith('192.168.') ||
-    hostname.startsWith('10.') ||
-    hostname.startsWith('172.16.') ||
-    hostname.startsWith('172.17.') ||
-    hostname.startsWith('172.18.') ||
-    hostname.startsWith('172.19.') ||
-    hostname.startsWith('172.2') ||
-    hostname.startsWith('172.30.') ||
-    hostname.startsWith('172.31.')
-  );
-
-  return isLocal;
-};
 
 /**
  * Hook personalizado para obtener las ventas mensuales desde el backend
- * Este endpoint NO requiere autenticación según la documentación
+ * Este endpoint requiere autenticación
  * @param {string} startDate - Fecha de inicio en formato YYYY-MM-DD (opcional)
  * @param {string} endDate - Fecha de fin en formato YYYY-MM-DD (opcional)
  * @returns {Object} { data, loading, error, refetch }
@@ -81,79 +30,22 @@ export const useMonthlySales = (startDate = null, endDate = null) => {
 
       logger.info('Intentando obtener ventas mensuales:', endpoint);
 
-      // Detectar si estamos en entorno local o desplegado
-      const isLocal = isLocalEnvironment();
-      let response = null;
-      let lastError = null;
+      // Usar authenticatedFetch con timeout extendido de 3 minutos
+      // Las ventas mensuales pueden tardar debido al procesamiento de muchas facturas
+      const MONTHLY_SALES_TIMEOUT = 180000; // 3 minutos en milisegundos
+      const response = await authenticatedFetch(
+        endpoint,
+        { method: 'GET' },
+        MONTHLY_SALES_TIMEOUT
+      );
 
-      if (isLocal) {
-        logger.info('Frontend en entorno LOCAL - Prioridad: backends locales');
-
-        // ENTORNO LOCAL: Intentar con backends locales primero
-        for (const localApi of API_LOCALS) {
-          try {
-            const url = `${localApi}${endpoint}`;
-            logger.info('Intentando con:', url);
-
-            response = await fetch(url, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-
-            if (response.ok) {
-              logger.info('Conectado exitosamente con:', localApi);
-              break;
-            }
-          } catch (err) {
-            logger.warn(`Error con ${localApi}:`, err.message);
-            lastError = err;
-          }
-        }
-
-        // Si no funcionó ningún backend local, intentar con el desplegado como fallback
-        if (!response || !response.ok) {
-          logger.warn('Backends locales no disponibles, intentando con backend desplegado como fallback...');
-          try {
-            const url = `${API_DEPLOYED}${endpoint}`;
-            logger.info('Intentando con backend desplegado:', url);
-
-            response = await fetch(url, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-          } catch (err) {
-            logger.error('Error con backend desplegado:', err.message);
-            throw new Error('No se pudo conectar con ningún servidor');
-          }
-        }
-      } else {
-        // ENTORNO DESPLEGADO: Solo usar backend desplegado
-        logger.info('Frontend en entorno DESPLEGADO - Usando solo backend desplegado');
-        try {
-          const url = `${API_DEPLOYED}${endpoint}`;
-          logger.info('Conectando con backend desplegado:', url);
-
-          response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-        } catch (err) {
-          logger.error('Error con backend desplegado:', err.message);
-          throw new Error('No se pudo conectar con el servidor');
-        }
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || result.message || 'Error al obtener ventas mensuales');
       }
 
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Error al obtener ventas mensuales');
-      }
+      logger.info('Ventas mensuales obtenidas exitosamente:', result);
 
       setData(result);
     } catch (err) {
