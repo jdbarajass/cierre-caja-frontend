@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Loader2, AlertCircle, Calendar, RefreshCw, Toggle } from 'lucide-react';
+import { TrendingUp, Loader2, AlertCircle, Calendar, RefreshCw, ArrowLeftRight } from 'lucide-react';
 import { getTopProductos } from '../../services/productosService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 
@@ -108,7 +108,7 @@ const TopProductos = () => {
           {/* Toggle Unificado */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <Toggle className="w-4 h-4 text-blue-600" />
+              <ArrowLeftRight className="w-4 h-4 text-blue-600" />
               Modo de Vista
             </label>
             <button
