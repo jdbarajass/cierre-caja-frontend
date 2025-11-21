@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { secureGetItem, secureSetItem, secureRemoveItem } from '../utils/secureStorage';
 import logger from '../utils/logger';
 
 const AuthContext = createContext(null);
@@ -17,12 +18,12 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar si hay una sesión guardada al cargar
   useEffect(() => {
-    const savedToken = localStorage.getItem('authToken');
-    const savedUser = localStorage.getItem('authUser');
+    const savedToken = secureGetItem('authToken');
+    const savedUser = secureGetItem('authUser');
 
     if (savedToken && savedUser) {
       try {
-        const userData = JSON.parse(savedUser);
+        const userData = typeof savedUser === 'string' ? JSON.parse(savedUser) : savedUser;
 
         // Verificar si la sesión ha expirado
         if (userData.loginTime) {
@@ -110,9 +111,9 @@ export const AuthProvider = ({ children }) => {
         loginTime: new Date().toISOString()
       };
 
-      // Guardar en localStorage
-      localStorage.setItem('authToken', generatedToken);
-      localStorage.setItem('authUser', JSON.stringify(userData));
+      // Guardar en almacenamiento seguro
+      secureSetItem('authToken', generatedToken);
+      secureSetItem('authUser', userData);
 
       setToken(generatedToken);
       setUser(userData);
@@ -143,9 +144,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // Limpiar localStorage
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('authUser');
+    // Limpiar almacenamiento seguro
+    secureRemoveItem('authToken');
+    secureRemoveItem('authUser');
 
     setToken(null);
     setUser(null);
