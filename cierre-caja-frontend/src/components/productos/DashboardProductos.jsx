@@ -1,24 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { DollarSign, Package, TrendingUp, FileText, Loader2, AlertCircle, Calendar, RefreshCw, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { DollarSign, Package, TrendingUp, FileText, Loader2, AlertCircle, Calendar, RefreshCw, Download, Search } from 'lucide-react';
 import { getResumenProductos, descargarReportePDF } from '../../services/productosService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 
 const DashboardProductos = () => {
   const [resumen, setResumen] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [date, setDate] = useState(getColombiaTodayString());
+  const [startDate, setStartDate] = useState(getColombiaTodayString());
+  const [endDate, setEndDate] = useState(getColombiaTodayString());
   const [downloadingPDF, setDownloadingPDF] = useState(false);
-
-  useEffect(() => {
-    fetchResumen();
-  }, [date]);
 
   const fetchResumen = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getResumenProductos({ date });
+      const data = await getResumenProductos({ startDate, endDate });
 
       if (!data.success) {
         throw new Error(data.error || 'Error al obtener datos');
@@ -35,25 +32,13 @@ const DashboardProductos = () => {
   const handleDescargarPDF = async () => {
     try {
       setDownloadingPDF(true);
-      await descargarReportePDF({ date });
+      await descargarReportePDF({ startDate, endDate });
     } catch (err) {
       alert(`Error al descargar PDF: ${err.message}`);
     } finally {
       setDownloadingPDF(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-semibold">Cargando resumen de productos...</p>
-          <p className="text-sm text-gray-500 mt-2">Consultando datos desde Alegra</p>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -76,55 +61,114 @@ const DashboardProductos = () => {
     );
   }
 
-  if (!resumen) return null;
-
   return (
     <div className="space-y-6">
-      {/* Selector de Fecha y Descarga PDF */}
+      {/* Selector de Rango de Fechas y Descarga PDF */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            <Calendar className="w-5 h-5 text-purple-600" />
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Seleccionar Fecha
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                max={getColombiaTodayString()}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fecha Inicio */}
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-purple-600" />
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha Inicio
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  max={endDate || getColombiaTodayString()}
+                  disabled={loading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            {/* Fecha Fin */}
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-purple-600" />
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha Fin
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate}
+                  max={getColombiaTodayString()}
+                  disabled={loading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
           </div>
 
-          <button
-            onClick={handleDescargarPDF}
-            disabled={downloadingPDF}
-            className={`flex items-center gap-2 px-6 py-2 rounded-xl transition-all shadow-md ${
-              downloadingPDF
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
-            }`}
-          >
-            {downloadingPDF ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generando PDF...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                Descargar Reporte PDF
-              </>
-            )}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Botón Consultar */}
+            <button
+              onClick={fetchResumen}
+              disabled={loading}
+              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-md flex-1 ${
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+              }`}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Consultando...
+                </>
+              ) : (
+                <>
+                  <Search className="w-5 h-5" />
+                  Consultar Período
+                </>
+              )}
+            </button>
+
+            {/* Botón Descargar PDF */}
+              <button
+              onClick={handleDescargarPDF}
+              disabled={downloadingPDF || !resumen}
+              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-md ${
+                downloadingPDF || !resumen
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
+              }`}
+            >
+              {downloadingPDF ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Generando PDF...
+                </>
+              ) : (
+                <>
+                  <Download className="w-5 h-5" />
+                  Descargar PDF
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Estado de carga */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600 font-semibold">Cargando resumen de productos...</p>
+            <p className="text-sm text-gray-500 mt-2">Consultando datos desde Alegra</p>
+          </div>
+        </div>
+      )}
+
       {/* Métricas Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {!loading && resumen && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Productos Vendidos */}
         <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between mb-3">
@@ -171,16 +215,30 @@ const DashboardProductos = () => {
           <p className="text-xs text-gray-500">Facturas con productos</p>
         </div>
       </div>
+      )}
 
       {/* Información adicional */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Fecha consultada:</strong> {date}
-        </p>
-        <p className="text-xs text-blue-600 mt-1">
-          Los datos se obtienen directamente desde las facturas de Alegra
-        </p>
-      </div>
+      {!loading && resumen && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-sm text-blue-800">
+            <strong>Período consultado:</strong> {startDate} {startDate !== endDate ? `hasta ${endDate}` : ''}
+          </p>
+          <p className="text-xs text-blue-600 mt-1">
+            Los datos se obtienen directamente desde las facturas de Alegra
+          </p>
+        </div>
+      )}
+
+      {/* Mensaje inicial */}
+      {!loading && !resumen && !error && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
+          <Package className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Selecciona un período para consultar</h3>
+          <p className="text-sm text-blue-700">
+            Elige las fechas y presiona "Consultar Período" para ver el resumen de productos
+          </p>
+        </div>
+      )}
     </div>
   );
 };

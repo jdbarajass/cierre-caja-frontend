@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { FileBarChart, Loader2, AlertCircle, Calendar, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileBarChart, Loader2, AlertCircle, Calendar, RefreshCw, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { getAnalisisCompleto } from '../../services/productosService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 
 const AnalisisCompleto = () => {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [date, setDate] = useState(getColombiaTodayString());
+  const [startDate, setStartDate] = useState(getColombiaTodayString());
+  const [endDate, setEndDate] = useState(getColombiaTodayString());
   const [expandedSections, setExpandedSections] = useState({
     resumen: true,
     top10: true,
@@ -16,15 +17,11 @@ const AnalisisCompleto = () => {
     listadoCompleto: false
   });
 
-  useEffect(() => {
-    fetchAnalisis();
-  }, [date]);
-
   const fetchAnalisis = async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await getAnalisisCompleto({ date });
+      const result = await getAnalisisCompleto({ startDate, endDate });
 
       if (!result.success) {
         throw new Error(result.error || 'Error al obtener datos');
@@ -44,18 +41,6 @@ const AnalisisCompleto = () => {
       [section]: !prev[section]
     }));
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-semibold">Cargando análisis completo...</p>
-          <p className="text-sm text-gray-500 mt-2">Este proceso puede tardar unos segundos</p>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -78,8 +63,6 @@ const AnalisisCompleto = () => {
     );
   }
 
-  if (!data) return null;
-
   const Section = ({ title, isExpanded, onToggle, children }) => (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
       <button
@@ -98,25 +81,73 @@ const AnalisisCompleto = () => {
 
   return (
     <div className="space-y-6">
-      {/* Selector de Fecha */}
+      {/* Selector de Rango de Fechas */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-purple-600" />
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Seleccionar Fecha
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              max={getColombiaTodayString()}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Fecha Inicio */}
+          <div className="flex items-center gap-3">
+            <Calendar className="w-5 h-5 text-purple-600" />
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha Inicio
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                max={endDate || getColombiaTodayString()}
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          {/* Fecha Fin */}
+          <div className="flex items-center gap-3">
+            <Calendar className="w-5 h-5 text-purple-600" />
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha Fin
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate}
+                max={getColombiaTodayString()}
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
           </div>
         </div>
 
-        {data.metadata && (
+        {/* Botón Consultar */}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={fetchAnalisis}
+            disabled={loading}
+            className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition-all shadow-md ${
+              loading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+            }`}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Consultando...
+              </>
+            ) : (
+              <>
+                <Search className="w-5 h-5" />
+                Consultar Período
+              </>
+            )}
+          </button>
+        </div>
+
+        {data && data.metadata && (
           <div className="mt-4 p-3 bg-blue-50 rounded-lg space-y-1">
             <p className="text-sm text-blue-800">
               <strong>Fecha de generación:</strong> {data.metadata.fecha_generacion}
@@ -131,48 +162,72 @@ const AnalisisCompleto = () => {
         )}
       </div>
 
-      {/* Resumen Ejecutivo */}
-      <Section
-        title="Resumen Ejecutivo"
-        isExpanded={expandedSections.resumen}
-        onToggle={() => toggleSection('resumen')}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <p className="text-sm text-blue-700 font-medium">Total Productos Vendidos</p>
-            <p className="text-2xl font-bold text-blue-900">
-              {data.resumen_ejecutivo.total_productos_vendidos_formatted}
-            </p>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <p className="text-sm text-green-700 font-medium">Ingresos Totales</p>
-            <p className="text-2xl font-bold text-green-900">
-              {data.resumen_ejecutivo.ingresos_totales_formatted}
-            </p>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-4">
-            <p className="text-sm text-purple-700 font-medium">Producto Más Vendido</p>
-            <p className="text-sm font-bold text-purple-900 line-clamp-2">
-              {data.resumen_ejecutivo.producto_mas_vendido}
-            </p>
-            <p className="text-xs text-purple-600 mt-1">
-              {data.resumen_ejecutivo.unidades_mas_vendido_formatted} unidades
-            </p>
-          </div>
-          <div className="bg-orange-50 rounded-lg p-4">
-            <p className="text-sm text-orange-700 font-medium">Facturas</p>
-            <p className="text-2xl font-bold text-orange-900">
-              {data.resumen_ejecutivo.numero_facturas}
-            </p>
-            <p className="text-xs text-orange-600 mt-1">
-              {data.resumen_ejecutivo.numero_items_unicos} productos únicos
-            </p>
+      {/* Estado de carga */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600 font-semibold">Cargando análisis completo...</p>
+            <p className="text-sm text-gray-500 mt-2">Este proceso puede tardar unos segundos</p>
           </div>
         </div>
-      </Section>
+      )}
 
-      {/* Top 10 Sin Unificar */}
-      <Section
+      {/* Mensaje inicial */}
+      {!loading && !data && !error && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
+          <FileBarChart className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Selecciona un período para consultar</h3>
+          <p className="text-sm text-blue-700">
+            Elige las fechas y presiona "Consultar Período" para ver el análisis completo
+          </p>
+        </div>
+      )}
+
+      {/* Resumen Ejecutivo */}
+      {!loading && data && (
+        <>
+          <Section
+            title="Resumen Ejecutivo"
+            isExpanded={expandedSections.resumen}
+            onToggle={() => toggleSection('resumen')}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-sm text-blue-700 font-medium">Total Productos Vendidos</p>
+                <p className="text-2xl font-bold text-blue-900">
+                  {data.resumen_ejecutivo.total_productos_vendidos_formatted}
+                </p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <p className="text-sm text-green-700 font-medium">Ingresos Totales</p>
+                <p className="text-2xl font-bold text-green-900">
+                  {data.resumen_ejecutivo.ingresos_totales_formatted}
+                </p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-sm text-purple-700 font-medium">Producto Más Vendido</p>
+                <p className="text-sm font-bold text-purple-900 line-clamp-2">
+                  {data.resumen_ejecutivo.producto_mas_vendido}
+                </p>
+                <p className="text-xs text-purple-600 mt-1">
+                  {data.resumen_ejecutivo.unidades_mas_vendido_formatted} unidades
+                </p>
+              </div>
+              <div className="bg-orange-50 rounded-lg p-4">
+                <p className="text-sm text-orange-700 font-medium">Facturas</p>
+                <p className="text-2xl font-bold text-orange-900">
+                  {data.resumen_ejecutivo.numero_facturas}
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  {data.resumen_ejecutivo.numero_items_unicos} productos únicos
+                </p>
+              </div>
+            </div>
+          </Section>
+
+          {/* Top 10 Sin Unificar */}
+          <Section
         title="Top 10 Productos (Sin Unificar)"
         isExpanded={expandedSections.top10}
         onToggle={() => toggleSection('top10')}
@@ -354,6 +409,8 @@ const AnalisisCompleto = () => {
           </table>
         </div>
       </Section>
+        </>
+      )}
     </div>
   );
 };
