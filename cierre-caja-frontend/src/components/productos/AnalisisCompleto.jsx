@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { FileBarChart, Loader2, AlertCircle, Calendar, RefreshCw, ChevronDown, ChevronUp, Search } from 'lucide-react';
-import { getAnalisisCompleto } from '../../services/productosService';
+import { FileBarChart, Loader2, AlertCircle, Calendar, RefreshCw, ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
+import { getAnalisisCompleto, descargarReportePDF } from '../../services/productosService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 
 const AnalisisCompleto = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [startDate, setStartDate] = useState(getColombiaTodayString());
-  const [endDate, setEndDate] = useState(getColombiaTodayString());
+
+  const currentDate = getColombiaTodayString();
+  const currentMonthStart = currentDate.substring(0, 8) + '01';
+
+  const [startDate, setStartDate] = useState(currentMonthStart);
+  const [endDate, setEndDate] = useState(currentDate);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     resumen: true,
     top10: true,
@@ -32,6 +37,17 @@ const AnalisisCompleto = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDescargarPDF = async () => {
+    try {
+      setDownloadingPDF(true);
+      await descargarReportePDF({ startDate, endDate });
+    } catch (err) {
+      alert(`Error al descargar PDF: ${err.message}`);
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -122,12 +138,13 @@ const AnalisisCompleto = () => {
           </div>
         </div>
 
-        {/* Botón Consultar */}
-        <div className="flex justify-center mt-4">
+        {/* Botones de Acción */}
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          {/* Botón Consultar */}
           <button
             onClick={fetchAnalisis}
             disabled={loading}
-            className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition-all shadow-md ${
+            className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition-all shadow-md flex-1 ${
               loading
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
@@ -142,6 +159,29 @@ const AnalisisCompleto = () => {
               <>
                 <Search className="w-5 h-5" />
                 Consultar Período
+              </>
+            )}
+          </button>
+
+          {/* Botón Descargar PDF */}
+          <button
+            onClick={handleDescargarPDF}
+            disabled={downloadingPDF || !data}
+            className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition-all shadow-md ${
+              downloadingPDF || !data
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
+            }`}
+          >
+            {downloadingPDF ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Generando PDF...
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5" />
+                Descargar PDF Completo
               </>
             )}
           </button>

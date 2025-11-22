@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { DollarSign, Package, TrendingUp, FileText, Loader2, AlertCircle, Calendar, RefreshCw, Download, Search } from 'lucide-react';
-import { getResumenProductos, descargarReportePDF } from '../../services/productosService';
+import { DollarSign, Package, TrendingUp, FileText, Loader2, AlertCircle, Calendar, RefreshCw, Search } from 'lucide-react';
+import { getResumenProductos } from '../../services/productosService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 
 const DashboardProductos = () => {
   const [resumen, setResumen] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [startDate, setStartDate] = useState(getColombiaTodayString());
-  const [endDate, setEndDate] = useState(getColombiaTodayString());
-  const [downloadingPDF, setDownloadingPDF] = useState(false);
+
+  const currentDate = getColombiaTodayString();
+  const currentMonthStart = currentDate.substring(0, 8) + '01';
+
+  const [startDate, setStartDate] = useState(currentMonthStart);
+  const [endDate, setEndDate] = useState(currentDate);
 
   const fetchResumen = async () => {
     try {
@@ -26,17 +29,6 @@ const DashboardProductos = () => {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDescargarPDF = async () => {
-    try {
-      setDownloadingPDF(true);
-      await descargarReportePDF({ startDate, endDate });
-    } catch (err) {
-      alert(`Error al descargar PDF: ${err.message}`);
-    } finally {
-      setDownloadingPDF(false);
     }
   };
 
@@ -105,12 +97,12 @@ const DashboardProductos = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Botón Consultar */}
+          {/* Botón Consultar */}
+          <div className="flex justify-center">
             <button
               onClick={fetchResumen}
               disabled={loading}
-              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-md flex-1 ${
+              className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition-all shadow-md ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
@@ -125,29 +117,6 @@ const DashboardProductos = () => {
                 <>
                   <Search className="w-5 h-5" />
                   Consultar Período
-                </>
-              )}
-            </button>
-
-            {/* Botón Descargar PDF */}
-              <button
-              onClick={handleDescargarPDF}
-              disabled={downloadingPDF || !resumen}
-              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-md ${
-                downloadingPDF || !resumen
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
-              }`}
-            >
-              {downloadingPDF ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generando PDF...
-                </>
-              ) : (
-                <>
-                  <Download className="w-5 h-5" />
-                  Descargar PDF
                 </>
               )}
             </button>

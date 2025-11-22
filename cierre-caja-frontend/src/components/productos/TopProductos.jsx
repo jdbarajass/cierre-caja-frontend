@@ -7,8 +7,12 @@ const TopProductos = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [startDate, setStartDate] = useState(getColombiaTodayString());
-  const [endDate, setEndDate] = useState(getColombiaTodayString());
+
+  const currentDate = getColombiaTodayString();
+  const currentMonthStart = currentDate.substring(0, 8) + '01';
+
+  const [startDate, setStartDate] = useState(currentMonthStart);
+  const [endDate, setEndDate] = useState(currentDate);
   const [limit, setLimit] = useState(10);
   const [unified, setUnified] = useState(true);
   const [dateRange, setDateRange] = useState('');
