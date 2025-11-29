@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { ArrowLeft, BarChart3, TrendingUp, Package, FileBarChart, Ruler, Shirt, Users } from 'lucide-react';
+import { ArrowLeft, BarChart3, Clock, Users, Trophy, RefreshCw, TrendingUp, ShoppingBag, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import DashboardProductos from './DashboardProductos';
-import TopProductos from './TopProductos';
-import CategoriasProductos from './CategoriasProductos';
-import AnalisisCompleto from './AnalisisCompleto';
-import AnalisisPorTalla from './AnalisisPorTalla';
-import AnalisisPorCategoriaTalla from './AnalisisPorCategoriaTalla';
-import AnalisisPorDepartamentoTalla from './AnalisisPorDepartamentoTalla';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import PeakHours from './PeakHours';
+import TopCustomers from './TopCustomers';
+import TopSellers from './TopSellers';
+import CustomerRetention from './CustomerRetention';
+import SalesTrends from './SalesTrends';
+import CrossSelling from './CrossSelling';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 
-const ProductosLayout = () => {
+const AnalyticsLayout = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
 
@@ -18,21 +18,21 @@ const ProductosLayout = () => {
   const getSectionTitle = () => {
     switch (activeSection) {
       case 'dashboard':
-        return 'Análisis de Productos - Resumen';
-      case 'top-productos':
-        return 'Análisis de Productos - Top Productos';
-      case 'categorias':
-        return 'Análisis de Productos - Categorías';
-      case 'analisis-completo':
-        return 'Análisis de Productos - Completo';
-      case 'analisis-por-talla':
-        return 'Análisis de Productos - Por Talla';
-      case 'analisis-categoria-talla':
-        return 'Análisis de Productos - Categoría y Talla';
-      case 'analisis-departamento-talla':
-        return 'Análisis de Productos - Departamento y Talla';
+        return 'Analytics - Dashboard Completo';
+      case 'peak-hours':
+        return 'Analytics - Horas Pico';
+      case 'top-customers':
+        return 'Analytics - Top Clientes';
+      case 'top-sellers':
+        return 'Analytics - Top Vendedoras';
+      case 'retention':
+        return 'Analytics - Retención de Clientes';
+      case 'trends':
+        return 'Analytics - Tendencias de Ventas';
+      case 'cross-selling':
+        return 'Analytics - Cross-Selling';
       default:
-        return 'Análisis de Productos';
+        return 'Analytics Avanzado';
     }
   };
 
@@ -43,33 +43,33 @@ const ProductosLayout = () => {
   };
 
   const sections = [
-    { id: 'analisis-completo', label: 'Análisis Completo', icon: FileBarChart, description: 'Vista detallada' },
-    { id: 'dashboard', label: 'Resumen', icon: BarChart3, description: 'Métricas principales' },
-    { id: 'top-productos', label: 'Top Productos', icon: TrendingUp, description: 'Más vendidos' },
-    { id: 'categorias', label: 'Categorías', icon: Package, description: 'Análisis por tipo' },
-    { id: 'analisis-por-talla', label: 'Por Talla', icon: Ruler, description: 'Ventas por talla' },
-    { id: 'analisis-categoria-talla', label: 'Categoría + Talla', icon: Shirt, description: 'Por categoría y talla' },
-    { id: 'analisis-departamento-talla', label: 'Departamento + Talla', icon: Users, description: 'Por departamento y talla' }
+    { id: 'dashboard', label: 'Dashboard Completo', icon: LayoutDashboard, description: 'Vista unificada de KPIs' },
+    { id: 'peak-hours', label: 'Horas Pico', icon: Clock, description: 'Mejores horas de venta' },
+    { id: 'top-customers', label: 'Top Clientes', icon: Users, description: 'Clientes que más compran' },
+    { id: 'top-sellers', label: 'Top Vendedoras', icon: Trophy, description: 'Vendedoras destacadas' },
+    { id: 'retention', label: 'Retención', icon: RefreshCw, description: 'Análisis RFM' },
+    { id: 'trends', label: 'Tendencias', icon: TrendingUp, description: 'Patrones de venta' },
+    { id: 'cross-selling', label: 'Cross-Selling', icon: ShoppingBag, description: 'Productos relacionados' }
   ];
 
   const renderSection = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <DashboardProductos />;
-      case 'top-productos':
-        return <TopProductos />;
-      case 'categorias':
-        return <CategoriasProductos />;
-      case 'analisis-completo':
-        return <AnalisisCompleto />;
-      case 'analisis-por-talla':
-        return <AnalisisPorTalla />;
-      case 'analisis-categoria-talla':
-        return <AnalisisPorCategoriaTalla />;
-      case 'analisis-departamento-talla':
-        return <AnalisisPorDepartamentoTalla />;
+        return <AnalyticsDashboard />;
+      case 'peak-hours':
+        return <PeakHours />;
+      case 'top-customers':
+        return <TopCustomers />;
+      case 'top-sellers':
+        return <TopSellers />;
+      case 'retention':
+        return <CustomerRetention />;
+      case 'trends':
+        return <SalesTrends />;
+      case 'cross-selling':
+        return <CrossSelling />;
       default:
-        return <DashboardProductos />;
+        return <AnalyticsDashboard />;
     }
   };
 
@@ -89,21 +89,12 @@ const ProductosLayout = () => {
               </button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Package className="w-7 h-7 text-blue-600" />
-                  Análisis de Productos
+                  <BarChart3 className="w-7 h-7 text-blue-600" />
+                  Analytics Avanzado
                 </h1>
-                <p className="text-sm text-gray-600">Sistema de reportes desde Alegra</p>
+                <p className="text-sm text-gray-600">Análisis inteligente de ventas</p>
               </div>
             </div>
-
-            {/* Botón Ventas Mensuales */}
-            <button
-              onClick={() => navigate('/monthly-sales')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-md"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Ver Ventas Mensuales
-            </button>
           </div>
         </div>
       </div>
@@ -150,4 +141,4 @@ const ProductosLayout = () => {
   );
 };
 
-export default ProductosLayout;
+export default AnalyticsLayout;

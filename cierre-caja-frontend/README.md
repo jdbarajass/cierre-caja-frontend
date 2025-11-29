@@ -110,12 +110,76 @@
   - Total vendido en el período
   - Número de facturas generadas
   - Promedio por factura
-- **Indicadores visuales**: Barras de progreso y porcentajes
+- **Indicadores visualares**: Barras de progreso y porcentajes
 - **🎯 Consulta manual optimizada**:
   - Sin carga automática al ingresar a la sección
   - Botón "Consultar Período" para ejecutar búsqueda
   - Previene peticiones innecesarias al backend
   - Mensaje informativo en estado inicial
+
+### 📈 Analytics Avanzado *(NUEVO)*
+Sistema completo de análisis de ventas con 7 módulos especializados:
+
+#### 📊 Dashboard Completo
+- Vista unificada con resumen de todos los KPIs
+- Cards informativos con métricas principales
+- Navegación rápida a análisis detallados
+- Filtros de rango de fechas (últimos 30 días por defecto)
+
+#### ⏰ Horas Pico de Ventas
+- Análisis de ventas por hora del día (24 horas)
+- Top 5 mejores horas con ranking visual
+- Desglose por día de la semana
+- Métricas: Ingresos, facturas, ticket promedio por hora
+- Indicadores de rendimiento con medallas (🥇🥈🥉)
+
+#### 👥 Top Clientes
+- Ranking de clientes por total gastado
+- Límite configurable: Top 5, 10, 20 o 50 clientes
+- Segmentación automática: Nuevos, Recurrentes, VIP
+- Métricas por cliente: Frecuencia, ticket promedio, días como cliente
+- Badges visuales para clientes VIP
+
+#### 🏆 Top Vendedoras
+- Podio visual con las 3 mejores vendedoras
+- Gradientes de colores para destacar posiciones
+- Tabla completa con ranking extendido
+- Métricas: Ventas totales, facturas, clientes únicos
+- Hora más productiva de cada vendedora
+
+#### 🔄 Retención de Clientes (RFM)
+- Análisis RFM: Recency, Frequency, Monetary
+- Segmentación de clientes:
+  - 🆕 Nuevos (1 compra)
+  - 🔄 Recurrentes (2-4 compras)
+  - ⭐ Leales (5+ compras)
+- Estados de actividad: Activo, En riesgo, Inactivo
+- Tasa de retención y clientes en riesgo
+- Cards visuales por segmento con contadores
+
+#### 📈 Tendencias de Ventas
+- Análisis temporal de ventas diarias
+- Desglose por día de la semana
+- Identificación del mejor y peor día
+- Promedio de ventas por día
+- Métricas de crecimiento y tendencias
+
+#### 🛍️ Cross-Selling
+- Análisis de productos comprados juntos
+- Top 20 pares de productos con mayor frecuencia
+- Métricas de confianza y soporte
+- Ingresos generados por cada combinación
+- Cards visuales con productos relacionados
+- Sugerencias para promociones y combos
+
+#### ⚡ Características Técnicas
+- **Timeout optimizado**: 50 segundos para consultas largas
+- **Mensajes informativos**: Loading con estimación de tiempo
+- **Manejo de errores robusto**: Reintentos y mensajes claros
+- **Integración con backend**: JWT authentication
+- **Filtros de fecha**: Rango personalizable en todos los módulos
+- **UI responsive**: Diseño adaptado a móvil, tablet y escritorio
+- **Navegación por tabs**: Acceso rápido entre módulos
 
 ---
 
@@ -406,27 +470,54 @@ cierre-caja-frontend/
 │
 ├── src/
 │   ├── components/        # Componentes de React
+│   │   ├── analytics/     # Módulo de Analytics (NUEVO)
+│   │   │   ├── AnalyticsLayout.jsx      # Layout principal con navegación
+│   │   │   ├── AnalyticsDashboard.jsx   # Dashboard unificado
+│   │   │   ├── PeakHours.jsx            # Análisis de horas pico
+│   │   │   ├── TopCustomers.jsx         # Top clientes
+│   │   │   ├── TopSellers.jsx           # Top vendedoras con podio
+│   │   │   ├── CustomerRetention.jsx    # Análisis RFM
+│   │   │   ├── SalesTrends.jsx          # Tendencias de ventas
+│   │   │   └── CrossSelling.jsx         # Cross-selling de productos
+│   │   │
+│   │   ├── productos/     # Módulo de Análisis de Productos
+│   │   │   ├── ProductosLayout.jsx      # Layout con navegación
+│   │   │   ├── ProductosDashboard.jsx   # Dashboard de productos
+│   │   │   ├── TopProductos.jsx         # Top productos vendidos
+│   │   │   ├── CategoriaAnalisis.jsx    # Análisis por categorías
+│   │   │   └── AnalisisCompleto.jsx     # Reporte completo
+│   │   │
 │   │   ├── Dashboard.jsx  # Componente principal del cierre de caja
 │   │   ├── Login.jsx      # Componente de autenticación
+│   │   ├── MonthlySales.jsx    # Ventas mensuales
 │   │   └── ProtectedRoute.jsx  # HOC para proteger rutas
 │   │
 │   ├── contexts/          # Context API de React
 │   │   └── AuthContext.jsx  # Contexto de autenticación
 │   │
 │   ├── services/          # Servicios y API
-│   │   └── api.js         # Cliente HTTP para backend
+│   │   ├── api.js         # Cliente HTTP para backend
+│   │   ├── analyticsService.js  # Servicio de Analytics (NUEVO)
+│   │   └── productosService.js  # Servicio de Productos
+│   │
+│   ├── utils/             # Utilidades
+│   │   ├── dateUtils.js   # Funciones de manejo de fechas
+│   │   ├── logger.js      # Sistema de logging
+│   │   └── secureStorage.js  # Almacenamiento seguro
 │   │
 │   ├── App.jsx            # Componente raíz con routing
 │   ├── main.jsx           # Punto de entrada de React
 │   └── index.css          # Estilos globales + Tailwind
 │
 ├── .env.production        # Variables de entorno para producción
+├── .env.local             # Variables de entorno locales (git ignored)
 ├── .gitignore             # Archivos ignorados por Git
 ├── index.html             # HTML principal
 ├── package.json           # Dependencias y scripts
 ├── postcss.config.js      # Configuración de PostCSS
 ├── tailwind.config.js     # Configuración de Tailwind CSS
 ├── vite.config.js         # Configuración de Vite
+├── FRONTEND_API_DOCUMENTATION.md  # Documentación de API
 └── README.md              # Este archivo
 ```
 
@@ -605,8 +696,20 @@ Este frontend se conecta a un backend alojado en Render:
 
 ### Endpoints Disponibles
 
+#### Cierre de Caja
 - `POST /api/sum_payments` - Envía datos del cierre y recibe cálculos + comparación con Alegra
 - `GET /api/monthly_sales` - Consulta el resumen de ventas mensuales (parámetros opcionales: `start_date`, `end_date`)
+
+#### Analytics Avanzado (NUEVO)
+- `GET /api/analytics/dashboard` - Dashboard completo con todos los análisis
+- `GET /api/analytics/peak-hours` - Análisis de horas pico de ventas
+- `GET /api/analytics/top-customers` - Top clientes por total gastado
+- `GET /api/analytics/top-sellers` - Top vendedoras por ventas
+- `GET /api/analytics/customer-retention` - Análisis RFM de retención de clientes
+- `GET /api/analytics/sales-trends` - Tendencias de ventas diarias y semanales
+- `GET /api/analytics/cross-selling` - Productos que se compran juntos
+
+**Nota**: Todos los endpoints de analytics requieren autenticación JWT y aceptan parámetros de fecha: `date`, `start_date`, `end_date`
 
 ### Lógica de Fallback Inteligente
 

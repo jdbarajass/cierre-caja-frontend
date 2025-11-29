@@ -445,6 +445,13 @@ const Dashboard = () => {
                 Análisis de Productos
               </button>
               <button
+                onClick={() => navigate('/analytics')}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-md text-sm font-medium"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Analytics Avanzado
+              </button>
+              <button
                 onClick={() => navigate('/monthly-sales')}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md text-sm font-medium"
               >
