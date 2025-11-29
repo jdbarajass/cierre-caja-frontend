@@ -9,20 +9,14 @@ const AnalyticsDashboard = () => {
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState({
     start_date: '',
-    end_date: getColombiaTodayString()
+    end_date: ''
   });
 
-  // Establecer fecha de inicio a 30 días atrás
-  useEffect(() => {
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-    setDateRange(prev => ({ ...prev, start_date: startDate }));
-  }, []);
-
   const fetchDashboard = async () => {
-    if (!dateRange.start_date || !dateRange.end_date) return;
+    if (!dateRange.start_date || !dateRange.end_date) {
+      setError('Por favor selecciona ambas fechas para consultar');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -40,12 +34,6 @@ const AnalyticsDashboard = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (dateRange.start_date && dateRange.end_date) {
-      fetchDashboard();
-    }
-  }, [dateRange]);
 
   if (loading) {
     return (
@@ -84,8 +72,45 @@ const AnalyticsDashboard = () => {
 
   if (!data) {
     return (
-      <div className="text-center text-gray-500 py-12">
-        Selecciona un rango de fechas para ver el dashboard
+      <div className="space-y-6">
+        {/* Filtros de Fecha */}
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-gray-600" />
+              <span className="font-semibold text-gray-700">Rango de Fechas:</span>
+            </div>
+            <input
+              type="date"
+              value={dateRange.start_date}
+              onChange={(e) => setDateRange(prev => ({ ...prev, start_date: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <span className="text-gray-600">hasta</span>
+            <input
+              type="date"
+              value={dateRange.end_date}
+              onChange={(e) => setDateRange(prev => ({ ...prev, end_date: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <button
+              onClick={fetchDashboard}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Consultar Período
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+          <Calendar className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">
+            Selecciona un período para consultar
+          </h3>
+          <p className="text-blue-700">
+            Elige la fecha de inicio y fecha de fin, luego presiona "Consultar Período" para ver el análisis completo.
+          </p>
+        </div>
       </div>
     );
   }
@@ -116,7 +141,7 @@ const AnalyticsDashboard = () => {
             onClick={fetchDashboard}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Actualizar
+            Consultar Período
           </button>
         </div>
       </div>

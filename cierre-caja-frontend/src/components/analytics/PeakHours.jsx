@@ -9,20 +9,14 @@ const PeakHours = () => {
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState({
     start_date: '',
-    end_date: getColombiaTodayString()
+    end_date: ''
   });
 
-  // Establecer fecha de inicio a 30 días atrás
-  useEffect(() => {
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-    setDateRange(prev => ({ ...prev, start_date: startDate }));
-  }, []);
-
   const fetchData = async () => {
-    if (!dateRange.start_date || !dateRange.end_date) return;
+    if (!dateRange.start_date || !dateRange.end_date) {
+      setError('Por favor selecciona ambas fechas para consultar');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -40,12 +34,6 @@ const PeakHours = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (dateRange.start_date && dateRange.end_date) {
-      fetchData();
-    }
-  }, [dateRange]);
 
   if (loading) {
     return (
@@ -105,7 +93,7 @@ const PeakHours = () => {
             onClick={fetchData}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Actualizar
+            Consultar Período
           </button>
         </div>
       </div>

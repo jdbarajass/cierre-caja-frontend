@@ -10,19 +10,14 @@ const TopSellers = () => {
   const [limit, setLimit] = useState(10);
   const [dateRange, setDateRange] = useState({
     start_date: '',
-    end_date: getColombiaTodayString()
+    end_date: ''
   });
 
-  useEffect(() => {
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-    setDateRange(prev => ({ ...prev, start_date: startDate }));
-  }, []);
-
   const fetchData = async () => {
-    if (!dateRange.start_date || !dateRange.end_date) return;
+    if (!dateRange.start_date || !dateRange.end_date) {
+      setError('Por favor selecciona ambas fechas para consultar');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -40,12 +35,6 @@ const TopSellers = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (dateRange.start_date && dateRange.end_date) {
-      fetchData();
-    }
-  }, [dateRange, limit]);
 
   if (loading) {
     return (

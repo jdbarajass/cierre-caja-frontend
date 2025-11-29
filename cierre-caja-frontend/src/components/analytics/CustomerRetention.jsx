@@ -9,19 +9,14 @@ const CustomerRetention = () => {
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState({
     start_date: '',
-    end_date: getColombiaTodayString()
+    end_date: ''
   });
 
-  useEffect(() => {
-    const today = new Date();
-    const sixtyDaysAgo = new Date(today);
-    sixtyDaysAgo.setDate(today.getDate() - 60);
-    const startDate = sixtyDaysAgo.toISOString().split('T')[0];
-    setDateRange(prev => ({ ...prev, start_date: startDate }));
-  }, []);
-
   const fetchData = async () => {
-    if (!dateRange.start_date || !dateRange.end_date) return;
+    if (!dateRange.start_date || !dateRange.end_date) {
+      setError('Por favor selecciona ambas fechas para consultar');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -39,12 +34,6 @@ const CustomerRetention = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (dateRange.start_date && dateRange.end_date) {
-      fetchData();
-    }
-  }, [dateRange]);
 
   if (loading) {
     return (
