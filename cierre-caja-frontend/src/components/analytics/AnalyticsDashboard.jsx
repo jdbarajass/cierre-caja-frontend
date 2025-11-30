@@ -4,12 +4,16 @@ import { getAnalyticsDashboard } from '../../services/analyticsService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 
 const AnalyticsDashboard = () => {
+  // Inicializar fechas con el mes actual
+  const currentDate = getColombiaTodayString();
+  const currentMonthStart = currentDate.substring(0, 8) + '01';
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState({
-    start_date: '',
-    end_date: ''
+    start_date: currentMonthStart,
+    end_date: currentDate
   });
 
   const fetchDashboard = async () => {

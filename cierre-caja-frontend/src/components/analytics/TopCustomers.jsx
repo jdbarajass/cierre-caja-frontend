@@ -4,13 +4,17 @@ import { getTopCustomers } from '../../services/analyticsService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 
 const TopCustomers = () => {
+  // Inicializar fechas con el mes actual
+  const currentDate = getColombiaTodayString();
+  const currentMonthStart = currentDate.substring(0, 8) + '01';
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [limit, setLimit] = useState(10);
   const [dateRange, setDateRange] = useState({
-    start_date: '',
-    end_date: ''
+    start_date: currentMonthStart,
+    end_date: currentDate
   });
 
   const fetchData = async () => {
@@ -67,7 +71,59 @@ const TopCustomers = () => {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-gray-600" />
+              <span className="font-semibold text-gray-700">Rango de Fechas:</span>
+            </div>
+            <input
+              type="date"
+              value={dateRange.start_date}
+              onChange={(e) => setDateRange(prev => ({ ...prev, start_date: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-gray-600">hasta</span>
+            <input
+              type="date"
+              value={dateRange.end_date}
+              onChange={(e) => setDateRange(prev => ({ ...prev, end_date: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+            <select
+              value={limit}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>Top 5</option>
+              <option value={10}>Top 10</option>
+              <option value={20}>Top 20</option>
+              <option value={50}>Top 50</option>
+            </select>
+            <button
+              onClick={fetchData}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Consultar Período
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+          <Users className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">
+            Selecciona un período para consultar
+          </h3>
+          <p className="text-blue-700">
+            Elige las fechas de inicio y fin para visualizar los mejores clientes
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -178,8 +178,11 @@ Sistema completo de análisis de ventas con 7 módulos especializados:
 - **Manejo de errores robusto**: Reintentos y mensajes claros
 - **Integración con backend**: JWT authentication
 - **Filtros de fecha**: Rango personalizable en todos los módulos
+- **🎯 Fechas precargadas**: Primer día del mes actual y día actual
+- **Consulta manual optimizada**: Sin ejecución automática, botón "Consultar Período"
 - **UI responsive**: Diseño adaptado a móvil, tablet y escritorio
 - **Navegación por tabs**: Acceso rápido entre módulos
+- **Pantallas informativas**: Mensajes claros en estado inicial de cada sección
 
 ---
 
