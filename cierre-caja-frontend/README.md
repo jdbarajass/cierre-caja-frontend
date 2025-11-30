@@ -184,6 +184,126 @@ Sistema completo de análisis de ventas con 7 módulos especializados:
 - **Navegación por tabs**: Acceso rápido entre módulos
 - **Pantallas informativas**: Mensajes claros en estado inicial de cada sección
 
+### 📦 Análisis de Inventario *(NUEVO)*
+Sistema completo de gestión y análisis de inventario con integración a Alegra:
+
+#### 📊 Dashboard de Inventario
+- **Resumen Ejecutivo** con métricas clave del inventario
+  - Total de items y unidades en stock
+  - Valor total de inventario (costo)
+  - Valor potencial de venta
+  - Margen esperado con indicador visual por color
+  - Costo y precio promedio por unidad
+- **Alertas Inmediatas** de stock
+  - Productos sin stock con contador
+  - Productos con bajo stock configurable
+- **Visualización Comparativa**
+  - Gráfico de valor inventario vs potencial de venta
+  - Cálculo de ganancia esperada
+  - Indicadores de rendimiento con códigos de color
+
+#### 🏢 Análisis por Departamentos
+- **Distribución Visual** de inventario por departamento
+  - HOMBRE, MUJER, NIÑO, NIÑA
+  - Colores distintivos por departamento
+  - Gráficos de barras de distribución
+- **Métricas Detalladas** por departamento
+  - Total de items y unidades
+  - Valor de inventario
+  - Margen y valor potencial de venta
+- **Desglose por Categoría**
+  - Cards expandibles con categorías
+  - Tabla detallada por categoría dentro de cada departamento
+  - Porcentaje de contribución al departamento
+
+#### ⚠️ Alertas de Stock
+- **Configuración Dinámica**
+  - Umbral de stock bajo ajustable (1-20 unidades)
+  - Filtros por departamento y categoría
+  - Búsqueda y ordenamiento
+- **Productos Sin Stock**
+  - Tabla detallada con todos los productos
+  - Información de categoría, departamento y precio
+  - Contador de productos afectados
+- **Productos con Bajo Stock**
+  - Tabla con cantidad disponible
+  - Indicadores visuales de alerta
+  - Exportable para reabastecimiento
+
+#### 📊 Análisis ABC (Pareto)
+- **Clasificación Inteligente** de productos
+  - **Clase A (Críticos)**: ~20% productos = ~80% valor
+  - **Clase B (Importantes)**: ~30% productos = ~15% valor
+  - **Clase C (Normales)**: ~50% productos = ~5% valor
+- **Visualizaciones Detalladas**
+  - Gráficos de torta y barras por clase
+  - Cards informativas con métricas
+  - Tabla comparativa entre clases
+- **Recomendaciones de Gestión**
+  - Nivel de control sugerido por clase
+  - Estrategias de reabastecimiento
+  - Priorización de inventario
+
+#### 🏆 Top Productos por Valor
+- **Ranking Completo** de productos
+  - Selector de límite: Top 10, 20, 50
+  - Podio visual para top 3
+  - Medallas y badges de posición
+- **Métricas por Producto**
+  - Cantidad en inventario
+  - Costo unitario y precio de venta
+  - Valor total en inventario
+  - Valor potencial de venta
+  - Margen calculado con código de color
+  - Porcentaje del valor total
+- **Tabla Detallada**
+  - Ordenamiento por valor
+  - Información de categoría y departamento
+  - Barras de progreso visuales
+
+#### 📐 Análisis por Categorías y Tallas
+- **Análisis de Categorías**
+  - Gráficos de barras visuales
+  - Top 10 categorías destacadas
+  - Tabla completa con todas las categorías
+  - Métricas: Items, unidades, valor
+  - Porcentaje de participación
+- **Análisis de Tallas**
+  - Distribución de unidades por talla
+  - Identificación de tallas más vendidas
+  - Valor de inventario por talla
+  - Gráficos de barras por cantidad
+  - Útil para planificación de compras
+- **Estadísticas Resumen**
+  - Total de categorías y tallas únicas
+  - Valor total y promedios
+  - Cards informativos por sección
+
+#### ⚡ Características Técnicas del Módulo
+- **Servicio de API dedicado**: `inventoryService.js`
+  - 9 endpoints especializados
+  - Autenticación JWT integrada
+  - Manejo robusto de errores
+  - Logging detallado de operaciones
+- **Integración con Alegra**
+  - Datos en tiempo real del inventario
+  - Sincronización automática
+  - Validación de stock
+- **Actualización Manual**
+  - Botón de refresh en cada sección
+  - Sin actualizaciones automáticas innecesarias
+  - Control total del usuario
+- **UI/UX Optimizada**
+  - Diseño responsive (móvil, tablet, escritorio)
+  - Navegación por tabs fluida
+  - Loading states y skeletons
+  - Códigos de color intuitivos
+  - Secciones expandibles/colapsables
+- **Performance**
+  - Lazy loading de componentes
+  - Timeouts optimizados por endpoint
+  - Caché inteligente de datos
+
 ---
 
 ## 🛠️ Tecnologías
@@ -473,7 +593,7 @@ cierre-caja-frontend/
 │
 ├── src/
 │   ├── components/        # Componentes de React
-│   │   ├── analytics/     # Módulo de Analytics (NUEVO)
+│   │   ├── analytics/     # Módulo de Analytics
 │   │   │   ├── AnalyticsLayout.jsx      # Layout principal con navegación
 │   │   │   ├── AnalyticsDashboard.jsx   # Dashboard unificado
 │   │   │   ├── PeakHours.jsx            # Análisis de horas pico
@@ -483,12 +603,25 @@ cierre-caja-frontend/
 │   │   │   ├── SalesTrends.jsx          # Tendencias de ventas
 │   │   │   └── CrossSelling.jsx         # Cross-selling de productos
 │   │   │
+│   │   ├── inventory/     # Módulo de Inventario (NUEVO)
+│   │   │   ├── InventoryLayout.jsx      # Layout con navegación
+│   │   │   ├── InventoryDashboard.jsx   # Dashboard de inventario
+│   │   │   ├── DepartmentAnalysis.jsx   # Análisis por departamentos
+│   │   │   ├── StockAlerts.jsx          # Alertas de stock
+│   │   │   ├── ABCAnalysis.jsx          # Análisis ABC (Pareto)
+│   │   │   ├── TopProducts.jsx          # Top productos por valor
+│   │   │   ├── CategorySizeAnalysis.jsx # Análisis por categorías y tallas
+│   │   │   └── index.js                 # Exports del módulo
+│   │   │
 │   │   ├── productos/     # Módulo de Análisis de Productos
 │   │   │   ├── ProductosLayout.jsx      # Layout con navegación
 │   │   │   ├── ProductosDashboard.jsx   # Dashboard de productos
 │   │   │   ├── TopProductos.jsx         # Top productos vendidos
 │   │   │   ├── CategoriaAnalisis.jsx    # Análisis por categorías
 │   │   │   └── AnalisisCompleto.jsx     # Reporte completo
+│   │   │
+│   │   ├── common/        # Componentes comunes
+│   │   │   └── ErrorBoundary.jsx        # Manejo de errores
 │   │   │
 │   │   ├── Dashboard.jsx  # Componente principal del cierre de caja
 │   │   ├── Login.jsx      # Componente de autenticación
@@ -500,8 +633,14 @@ cierre-caja-frontend/
 │   │
 │   ├── services/          # Servicios y API
 │   │   ├── api.js         # Cliente HTTP para backend
-│   │   ├── analyticsService.js  # Servicio de Analytics (NUEVO)
-│   │   └── productosService.js  # Servicio de Productos
+│   │   ├── analyticsService.js  # Servicio de Analytics
+│   │   ├── inventoryService.js  # Servicio de Inventario (NUEVO)
+│   │   ├── productosService.js  # Servicio de Productos
+│   │   └── tallasService.js     # Servicio de Tallas
+│   │
+│   ├── hooks/             # Custom React Hooks
+│   │   ├── useDocumentTitle.js   # Hook para títulos de página
+│   │   └── useMonthlySales.js    # Hook para ventas mensuales
 │   │
 │   ├── utils/             # Utilidades
 │   │   ├── dateUtils.js   # Funciones de manejo de fechas
@@ -521,6 +660,7 @@ cierre-caja-frontend/
 ├── tailwind.config.js     # Configuración de Tailwind CSS
 ├── vite.config.js         # Configuración de Vite
 ├── FRONTEND_API_DOCUMENTATION.md  # Documentación de API
+├── FRONTEND_INVENTARIO_GUIDE.md   # Guía de implementación de inventario
 └── README.md              # Este archivo
 ```
 
@@ -703,7 +843,7 @@ Este frontend se conecta a un backend alojado en Render:
 - `POST /api/sum_payments` - Envía datos del cierre y recibe cálculos + comparación con Alegra
 - `GET /api/monthly_sales` - Consulta el resumen de ventas mensuales (parámetros opcionales: `start_date`, `end_date`)
 
-#### Analytics Avanzado (NUEVO)
+#### Analytics Avanzado
 - `GET /api/analytics/dashboard` - Dashboard completo con todos los análisis
 - `GET /api/analytics/peak-hours` - Análisis de horas pico de ventas
 - `GET /api/analytics/top-customers` - Top clientes por total gastado
@@ -713,6 +853,19 @@ Este frontend se conecta a un backend alojado en Render:
 - `GET /api/analytics/cross-selling` - Productos que se compran juntos
 
 **Nota**: Todos los endpoints de analytics requieren autenticación JWT y aceptan parámetros de fecha: `date`, `start_date`, `end_date`
+
+#### Análisis de Inventario (NUEVO)
+- `GET /api/inventory/summary` - Resumen ejecutivo del inventario
+- `GET /api/inventory/by-department` - Análisis por departamento
+- `GET /api/inventory/by-category` - Análisis por categoría
+- `GET /api/inventory/by-size` - Análisis por talla
+- `GET /api/inventory/out-of-stock` - Productos sin stock
+- `GET /api/inventory/low-stock?threshold=5` - Productos con bajo stock
+- `GET /api/inventory/top-by-value?limit=20` - Top productos por valor
+- `GET /api/inventory/abc-analysis` - Análisis ABC (Pareto)
+- `GET /api/inventory/analysis` - Análisis completo (todo en uno)
+
+**Nota**: Todos los endpoints de inventario requieren autenticación JWT
 
 ### Lógica de Fallback Inteligente
 
