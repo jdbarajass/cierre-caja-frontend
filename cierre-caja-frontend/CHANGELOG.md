@@ -1,5 +1,18 @@
 # Changelog - Sistema de Gestión Koaj Puerto Carreño
 
+## [2024-12-02] - Ajuste de Layout: Barra de Hora Centrada
+
+### 🎨 Optimización de Diseño de la Barra de Hora
+- **Archivo modificado**: `src/components/layout/MainLayout.jsx`
+- **Cambios realizados**:
+  - Ajuste del ancho de la barra morada de hora para coincidir exactamente con el contenedor de 'Ventas Mensuales'
+  - Barra ahora centrada usando `max-w-7xl mx-auto` en lugar de ocupar todo el ancho de la pantalla
+  - Fondo degradado morado (`bg-gradient-to-r from-blue-600 to-purple-600`) movido del contenedor externo al interno
+  - Texto del reloj actualizado a color blanco para mejor visibilidad sobre fondo morado
+  - Subtítulo "Hora de Colombia (UTC-5)" con opacidad 90% para mejor jerarquía visual
+  - Bordes redondeados (`rounded-xl`) para consistencia con otros componentes
+  - Diseño más cohesivo y profesional
+
 ## [2024-12-02] - Mejoras en Cierre de Caja, Layout y Validación de Fechas
 
 ### 📥 Nueva Funcionalidad: Descarga de Imagen en Cierre de Caja
