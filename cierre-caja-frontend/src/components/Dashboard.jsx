@@ -1194,7 +1194,7 @@ const Dashboard = () => {
                   {/* Gastos Operativos */}
                   {results.cash_count.adjustments.gastos_operativos > 0 && (
                     <div className="bg-white rounded-lg p-2 border border-gray-100">
-                      <div className="text-gray-600 mb-0.5">Gastos Oper.:</div>
+                      <div className="text-gray-600 mb-0.5">Gastos Operativos:</div>
                       <div className="font-bold text-red-900">{results.cash_count.adjustments.gastos_operativos_formatted}</div>
                     </div>
                   )}
