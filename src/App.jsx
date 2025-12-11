@@ -14,11 +14,6 @@ const ProductosLayout = lazy(() => import('./components/productos/ProductosLayou
 const AnalyticsLayout = lazy(() => import('./components/analytics/AnalyticsLayout'));
 const InventoryLayout = lazy(() => import('./components/inventory/InventoryLayout'));
 
-// Lazy loading de nuevos componentes de Estadísticas Avanzadas
-const InventarioDetallado = lazy(() => import('./components/estadisticas-avanzadas/InventarioDetallado'));
-const VentasTotales = lazy(() => import('./components/estadisticas-avanzadas/VentasTotales'));
-const DocumentosVenta = lazy(() => import('./components/estadisticas-avanzadas/DocumentosVenta'));
-
 // Componente de carga
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -62,33 +57,33 @@ const App = () => {
                 }
               />
 
-              {/* NUEVAS RUTAS - Estadísticas Avanzadas (Solo Admin) */}
+              {/* Estadísticas Avanzadas - Mismas páginas con APIs directas (Solo Admin) */}
+              <Route
+                path="/estadisticas-avanzadas/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <AnalyticsLayout />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/estadisticas-avanzadas/productos"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <ProductosLayout />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/estadisticas-avanzadas/inventario"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
-                      <InventarioDetallado />
-                    </MainLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/estadisticas-avanzadas/ventas-totales"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <MainLayout>
-                      <VentasTotales />
-                    </MainLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/estadisticas-avanzadas/documentos"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <MainLayout>
-                      <DocumentosVenta />
+                      <InventoryLayout />
                     </MainLayout>
                   </ProtectedRoute>
                 }
