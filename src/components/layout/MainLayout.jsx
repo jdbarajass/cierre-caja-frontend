@@ -293,6 +293,73 @@ const MainLayout = ({ children }) => {
                   )}
                 </div>
               )}
+
+              {/* Dropdown: Estadísticas Estándar (Solo Admin) */}
+              {canAccess(['admin']) && (
+                <div className="relative">
+                  <button
+                    onClick={() => toggleMenu('standard')}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'standard'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-200'
+                      }`}
+                  >
+                    <BarChart3 className={`w-4 h-4 ${expandedMenu === 'standard' ? 'text-white' : ''}`} />
+                    <span className="text-sm">📊 Estadísticas Estándar</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${expandedMenu === 'standard' ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {expandedMenu === 'standard' && (
+                    <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-[280px]">
+                      <div className="py-2">
+                        <button
+                          onClick={() => { handleNavigation('/estadisticas-estandar/analytics'); toggleMenu('standard'); }}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <TrendingUp className="w-5 h-5 text-orange-600" />
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">Analytics Avanzado</div>
+                            <div className="text-xs text-gray-500">Análisis inteligente de ventas</div>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => { handleNavigation('/estadisticas-estandar/productos'); toggleMenu('standard'); }}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <Package className="w-5 h-5 text-green-600" />
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">Análisis de Productos</div>
+                            <div className="text-xs text-gray-500">Reportes desde Alegra</div>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => { handleNavigation('/estadisticas-estandar/inventario'); toggleMenu('standard'); }}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <BarChart3 className="w-5 h-5 text-teal-600" />
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">Análisis de Inventario</div>
+                            <div className="text-xs text-gray-500">Estado del inventario</div>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => { handleNavigation('/monthly-sales'); toggleMenu('standard'); }}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <ShoppingBag className="w-5 h-5 text-purple-600" />
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">Ventas Mensuales</div>
+                            <div className="text-xs text-gray-500">Reporte mensual</div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </nav>
         </div>
