@@ -200,7 +200,7 @@ const MainLayout = ({ children }) => {
 
           {/* Navegación Principal - Todo en una línea horizontal */}
           <nav className="py-3">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+            <div className="flex items-center gap-2 pb-2">
               {/* Botones principales (Cierre de Caja, Ventas Mensuales para Sales) */}
               {visibleDashboardItems.map((item) => {
                 const Icon = item.icon;
@@ -211,8 +211,8 @@ const MainLayout = ({ children }) => {
                     key={item.id}
                     onClick={() => handleNavigation(item.path)}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
-                        ? `${getActiveColor(item.color)} shadow-md transform scale-105`
-                        : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
+                      ? `${getActiveColor(item.color)} shadow-md transform scale-105`
+                      : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
                       }`}
                   >
                     <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
@@ -227,8 +227,8 @@ const MainLayout = ({ children }) => {
                   <button
                     onClick={() => toggleMenu('advanced')}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'advanced'
-                        ? 'bg-yellow-500 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border border-gray-200'
+                      ? 'bg-yellow-500 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border border-gray-200'
                       }`}
                   >
                     <Zap className={`w-4 h-4 ${expandedMenu === 'advanced' ? 'text-white' : ''}`} />
@@ -237,7 +237,7 @@ const MainLayout = ({ children }) => {
                   </button>
 
                   {expandedMenu === 'advanced' && (
-                    <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-[280px]">
+                    <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] min-w-[280px]">
                       <div className="py-2">
                         <button
                           onClick={() => { handleNavigation('/estadisticas-avanzadas/analytics'); toggleMenu('advanced'); }}
@@ -294,8 +294,8 @@ const MainLayout = ({ children }) => {
                   <button
                     onClick={() => toggleMenu('standard')}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'standard'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-200'
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-200'
                       }`}
                   >
                     <BarChart3 className={`w-4 h-4 ${expandedMenu === 'standard' ? 'text-white' : ''}`} />
@@ -304,7 +304,7 @@ const MainLayout = ({ children }) => {
                   </button>
 
                   {expandedMenu === 'standard' && (
-                    <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-[280px]">
+                    <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] min-w-[280px]">
                       <div className="py-2">
                         <button
                           onClick={() => { handleNavigation('/estadisticas-estandar/analytics'); toggleMenu('standard'); }}
