@@ -9,7 +9,9 @@ import {
   ShoppingBag,
   Clock,
   User,
-  LogOut
+  LogOut,
+  FileText,
+  Zap
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -29,14 +31,16 @@ const MainLayout = ({ children }) => {
     return () => clearInterval(timer);
   }, []);
 
-  const navigationItems = [
+  // Estructura de navegación con 3 secciones
+  // Sección 1: Cierre de Caja (Admin y Sales)
+  const dashboardSection = [
     {
       id: 'dashboard',
       label: 'Cierre de Caja',
       path: '/dashboard',
       icon: Home,
       color: 'blue',
-      roles: ['admin', 'sales'] // Accesible para admin y sales
+      roles: ['admin', 'sales']
     },
     {
       id: 'monthly-sales',
@@ -44,38 +48,71 @@ const MainLayout = ({ children }) => {
       path: '/monthly-sales',
       icon: ShoppingBag,
       color: 'purple',
-      roles: ['admin', 'sales'] // Accesible para admin y sales
-    },
-    {
-      id: 'productos',
-      label: 'Análisis de Productos',
-      path: '/productos',
-      icon: Package,
-      color: 'green',
-      roles: ['admin'] // Solo admin
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics Avanzado',
-      path: '/analytics',
-      icon: TrendingUp,
-      color: 'orange',
-      roles: ['admin'] // Solo admin
-    },
-    {
-      id: 'inventario',
-      label: 'Análisis de Inventario',
-      path: '/inventario',
-      icon: BarChart3,
-      color: 'teal',
-      roles: ['admin'] // Solo admin
+      roles: ['sales'] // Solo sales, admin ve esto en otra sección si es necesario
     }
   ];
 
-  // Filtrar elementos de navegación según el rol del usuario
-  const visibleNavigationItems = navigationItems.filter(item =>
-    canAccess(item.roles)
-  );
+  // Sección 2: Estadísticas Avanzadas (Solo Admin - APIs directas)
+  const advancedStatsSection = [
+    {
+      id: 'inventario-detallado',
+      label: 'Inventario Detallado',
+      path: '/estadisticas-avanzadas/inventario',
+      icon: Package,
+      color: 'green',
+      roles: ['admin']
+    },
+    {
+      id: 'ventas-totales',
+      label: 'Totales de Ventas',
+      path: '/estadisticas-avanzadas/ventas-totales',
+      icon: TrendingUp,
+      color: 'purple',
+      roles: ['admin']
+    },
+    {
+      id: 'documentos-venta',
+      label: 'Documentos de Venta',
+      path: '/estadisticas-avanzadas/documentos',
+      icon: FileText,
+      color: 'blue',
+      roles: ['admin']
+    }
+  ];
+
+  // Sección 3: Estadísticas Estándar (Solo Admin - APIs documentadas)
+  const standardStatsSection = [
+    {
+      id: 'analytics',
+      label: 'Analytics',
+      path: '/estadisticas-estandar/analytics',
+      icon: BarChart3,
+      color: 'orange',
+      roles: ['admin']
+    },
+    {
+      id: 'inventario',
+      label: 'Inventario',
+      path: '/estadisticas-estandar/inventario',
+      icon: Package,
+      color: 'teal',
+      roles: ['admin']
+    },
+    {
+      id: 'productos',
+      label: 'Productos',
+      path: '/estadisticas-estandar/productos',
+      icon: ShoppingBag,
+      color: 'green',
+      roles: ['admin']
+    }
+  ];
+
+  // Filtrar secciones según el rol del usuario
+  const visibleDashboardItems = dashboardSection.filter(item => canAccess(item.roles));
+  const visibleAdvancedStatsItems = advancedStatsSection.filter(item => canAccess(item.roles));
+  const visibleStandardStatsItems = standardStatsSection.filter(item => canAccess(item.roles));
+
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -153,27 +190,94 @@ const MainLayout = ({ children }) => {
             </div>
           </div>
 
-          {/* Navegación Principal */}
+          {/* Navegación Principal - Estructura con 3 Secciones */}
           <nav className="py-3">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
-              {visibleNavigationItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.path);
+            <div className="space-y-4">
+              {/* Sección 1: Dashboard/Cierre de Caja (Admin y Sales) */}
+              {visibleDashboardItems.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+                    {visibleDashboardItems.map((item) => {
+                      const Icon = item.icon;
+                      const active = isActive(item.path);
 
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavigation(item.path)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
-                        ? `${getActiveColor(item.color)} shadow-md transform scale-105`
-                        : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
-                      }`}
-                  >
-                    <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
-                    <span className="text-sm">{item.label}</span>
-                  </button>
-                );
-              })}
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleNavigation(item.path)}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
+                              ? `${getActiveColor(item.color)} shadow-md transform scale-105`
+                              : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
+                            }`}
+                        >
+                          <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
+                          <span className="text-sm">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sección 2: Estadísticas Avanzadas (Solo Admin) */}
+              {visibleAdvancedStatsItems.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2 px-2">
+                    <Zap className="w-4 h-4 text-yellow-500" />
+                    <h3 className="text-xs font-bold text-gray-600 uppercase tracking-wide">Estadísticas Avanzadas</h3>
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+                    {visibleAdvancedStatsItems.map((item) => {
+                      const Icon = item.icon;
+                      const active = isActive(item.path);
+
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleNavigation(item.path)}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
+                              ? `${getActiveColor(item.color)} shadow-md transform scale-105`
+                              : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
+                            }`}
+                        >
+                          <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
+                          <span className="text-sm">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sección 3: Estadísticas Estándar (Solo Admin) */}
+              {visibleStandardStatsItems.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2 px-2">
+                    <BarChart3 className="w-4 h-4 text-blue-500" />
+                    <h3 className="text-xs font-bold text-gray-600 uppercase tracking-wide">Estadísticas Estándar</h3>
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+                    {visibleStandardStatsItems.map((item) => {
+                      const Icon = item.icon;
+                      const active = isActive(item.path);
+
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleNavigation(item.path)}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
+                              ? `${getActiveColor(item.color)} shadow-md transform scale-105`
+                              : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
+                            }`}
+                        >
+                          <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
+                          <span className="text-sm">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </nav>
         </div>
