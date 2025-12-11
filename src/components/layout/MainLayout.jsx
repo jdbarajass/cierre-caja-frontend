@@ -12,6 +12,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
+import { canAccess } from '../../utils/auth';
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -34,37 +35,47 @@ const MainLayout = ({ children }) => {
       label: 'Cierre de Caja',
       path: '/dashboard',
       icon: Home,
-      color: 'blue'
+      color: 'blue',
+      roles: ['admin', 'sales'] // Accesible para admin y sales
     },
     {
       id: 'monthly-sales',
       label: 'Ventas Mensuales',
       path: '/monthly-sales',
       icon: ShoppingBag,
-      color: 'purple'
+      color: 'purple',
+      roles: ['admin', 'sales'] // Accesible para admin y sales
     },
     {
       id: 'productos',
       label: 'Análisis de Productos',
       path: '/productos',
       icon: Package,
-      color: 'green'
+      color: 'green',
+      roles: ['admin'] // Solo admin
     },
     {
       id: 'analytics',
       label: 'Analytics Avanzado',
       path: '/analytics',
       icon: TrendingUp,
-      color: 'orange'
+      color: 'orange',
+      roles: ['admin'] // Solo admin
     },
     {
       id: 'inventario',
       label: 'Análisis de Inventario',
       path: '/inventario',
       icon: BarChart3,
-      color: 'teal'
+      color: 'teal',
+      roles: ['admin'] // Solo admin
     }
   ];
+
+  // Filtrar elementos de navegación según el rol del usuario
+  const visibleNavigationItems = navigationItems.filter(item =>
+    canAccess(item.roles)
+  );
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -122,7 +133,12 @@ const MainLayout = ({ children }) => {
             <div className="hidden md:flex items-center gap-4">
               <div className="text-right">
                 <p className="text-xs text-gray-500">Usuario</p>
-                <p className="text-sm font-semibold text-gray-900">{user?.email || user?.username || 'Administrador'}</p>
+                <p className="text-sm font-semibold text-gray-900">{user?.name || user?.email || 'Administrador'}</p>
+                {user?.role && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                    {user.role === 'admin' ? 'Administrador' : user.role === 'sales' ? 'Ventas' : user.role}
+                  </span>
+                )}
                 <button
                   onClick={handleLogout}
                   className="mt-1 flex items-center gap-2 text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
@@ -140,7 +156,7 @@ const MainLayout = ({ children }) => {
           {/* Navegación Principal */}
           <nav className="py-3">
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
-              {navigationItems.map((item) => {
+              {visibleNavigationItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
 
@@ -148,11 +164,10 @@ const MainLayout = ({ children }) => {
                   <button
                     key={item.id}
                     onClick={() => handleNavigation(item.path)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${
-                      active
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
                         ? `${getActiveColor(item.color)} shadow-md transform scale-105`
                         : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
-                    }`}
+                      }`}
                   >
                     <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
                     <span className="text-sm">{item.label}</span>

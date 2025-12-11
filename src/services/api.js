@@ -149,12 +149,16 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
         );
 
         // Si la respuesta es exitosa, retornarla
-        if (response.ok || response.status === 401) {
+        if (response.ok || response.status === 401 || response.status === 403) {
           if (response.status === 401) {
             secureRemoveItem('authToken');
             secureRemoveItem('authUser');
             window.location.href = '/login';
             throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+          }
+          if (response.status === 403) {
+            window.location.href = '/unauthorized';
+            throw new Error('No tienes permisos para acceder a este recurso.');
           }
           return response;
         }
@@ -188,6 +192,12 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
           secureRemoveItem('authUser');
           window.location.href = '/login';
           throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+        }
+
+        // Si la respuesta es 403 (sin permisos), redirigir a unauthorized
+        if (response.status === 403) {
+          window.location.href = '/unauthorized';
+          throw new Error('No tienes permisos para acceder a este recurso.');
         }
 
         return response;
@@ -224,18 +234,24 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
       throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
     }
 
+    // Si la respuesta es 403 (sin permisos), redirigir a unauthorized
+    if (response.status === 403) {
+      window.location.href = '/unauthorized';
+      throw new Error('No tienes permisos para acceder a este recurso.');
+    }
+
     return response;
   } catch (deployedError) {
     const errorDetails = isLocal
       ? {
-          locales: API_LOCALS.join(', '),
-          deployed: API_DEPLOYED,
-          lastError: deployedError.message,
-        }
+        locales: API_LOCALS.join(', '),
+        deployed: API_DEPLOYED,
+        lastError: deployedError.message,
+      }
       : {
-          deployed: API_DEPLOYED,
-          lastError: deployedError.message,
-        };
+        deployed: API_DEPLOYED,
+        lastError: deployedError.message,
+      };
 
     logger.error('Error de conexión:', errorDetails);
 

@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './components/Login';
+import Unauthorized from './components/Unauthorized';
 import MainLayout from './components/layout/MainLayout';
 
 // Lazy loading del Dashboard, MonthlySales, ProductosLayout, AnalyticsLayout e InventoryLayout para reducir el bundle inicial
@@ -31,10 +32,11 @@ const App = () => {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
               <Route
                 path="/dashboard"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['admin', 'sales']}>
                     <MainLayout>
                       <Dashboard />
                     </MainLayout>
@@ -44,7 +46,7 @@ const App = () => {
               <Route
                 path="/monthly-sales"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['admin', 'sales']}>
                     <MainLayout>
                       <MonthlySales />
                     </MainLayout>
@@ -54,7 +56,7 @@ const App = () => {
               <Route
                 path="/productos"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <ProductosLayout />
                     </MainLayout>
@@ -64,7 +66,7 @@ const App = () => {
               <Route
                 path="/analytics"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <AnalyticsLayout />
                     </MainLayout>
@@ -74,7 +76,7 @@ const App = () => {
               <Route
                 path="/inventario"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <InventoryLayout />
                     </MainLayout>
