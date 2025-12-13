@@ -170,6 +170,16 @@ const Dashboard = () => {
     ));
   };
 
+  const limpiarDesfases = () => {
+    setAdjustments({
+      ...adjustments,
+      desfase_tipo: '',
+      desfase_valor: '',
+      desfase_nota: ''
+    });
+    setDesfaseSugerido(null);
+  };
+
   const handleSubmit = async () => {
     // Validar que haya al menos un valor en monedas o billetes
     const hasCoins = Object.values(coins).some(value => parseInt(value) > 0);
@@ -932,9 +942,20 @@ const Dashboard = () => {
                 {/* Sección de Desfases */}
                 {showDesfaseSection && (
                   <div className="mt-4 border-t pt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Desfases en Caja
-                    </label>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-sm font-medium text-gray-700">
+                        Desfases en Caja
+                      </label>
+                      <button
+                        type="button"
+                        onClick={limpiarDesfases}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                        title="Limpiar campos de desfases"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Limpiar
+                      </button>
+                    </div>
 
                     {/* Alerta de desfase detectado */}
                     {desfaseSugerido && (
@@ -1569,14 +1590,89 @@ const Dashboard = () => {
                   Resumen del Cierre
                 </h3>
 
+                {/* Grid principal - 3 tarjetas destacadas */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mb-3">
+                  {/* Total Venta del Día + Facturas Procesadas (Horizontal) */}
+                  {(results.alegra?.total_sale || results.alegra?.invoices_summary) && (
+                    <div className="bg-gradient-to-br from-green-500 to-blue-600 rounded-lg p-2.5 border border-green-400 shadow-sm text-white">
+                      <div className="flex gap-3 items-center justify-between">
+                        {/* Total Venta */}
+                        {results.alegra?.total_sale && (
+                          <div className="flex-1">
+                            <div className="text-[10px] font-semibold mb-0.5 opacity-90">TOTAL VENTA DEL DÍA</div>
+                            <div className="text-lg font-bold">
+                              {results.alegra.total_sale.formatted}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Separador vertical */}
+                        <div className="w-px h-12 bg-white/30"></div>
+
+                        {/* Facturas */}
+                        {results.alegra?.invoices_summary && (
+                          <div className="flex-1">
+                            <div className="text-[10px] font-semibold mb-0.5 opacity-90">FACTURAS</div>
+                            <div className="text-lg font-bold mb-0.5">
+                              {results.alegra.invoices_summary.total_invoices}
+                            </div>
+                            <div className="text-[9px] opacity-75">
+                              ✓ {results.alegra.invoices_summary.active_invoices} activas
+                              {results.alegra.invoices_summary.voided_invoices > 0 && (
+                                <> • ✗ {results.alegra.invoices_summary.voided_invoices} anuladas</>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Efectivo de Ventas (Alegra) */}
+                  {results.alegra.results.cash.total > 0 && (
+                    <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-lg p-2.5 border border-green-400 shadow-sm text-white">
+                      <div className="text-[10px] font-semibold mb-0.5 opacity-90">EFECTIVO VENTAS (ALEGRA)</div>
+                      <div className="text-lg font-bold">
+                        {results.detalle_consignacion?.venta_efectivo_formatted || results.alegra.results.cash.formatted}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Valor a Consignar */}
+                  {results.cash_count.consignar.efectivo_para_consignar_final > 0 && (
+                    <div className="bg-gradient-to-br from-purple-600 to-violet-700 rounded-lg p-2.5 border border-purple-400 shadow-sm text-white">
+                      <div className="text-[10px] font-semibold mb-0.5 opacity-90">VALOR A CONSIGNAR</div>
+                      <div className="text-lg font-bold">
+                        {results.detalle_consignacion?.valor_consignar_formatted || results.cash_count.consignar.efectivo_para_consignar_final_formatted}
+                      </div>
+                      {/* Mostrar detalle desglosado si existe */}
+                      {results.detalle_consignacion?.detalle && (
+                        <div className="text-[9px] opacity-75 mt-1 font-mono">
+                          {results.detalle_consignacion.detalle}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Grid secundario - Métodos de pago y detalles */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
                   {/* QR */}
                   {results.metodos_pago_registrados.qr_julieth > 0 && (
                     <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
-                      <div className="text-xs font-medium text-gray-600 mb-1">QR</div>
+                      <div className="text-xs font-medium text-gray-600 mb-1">QR (Transferencias)</div>
                       <div className="text-lg font-bold text-blue-900">
-                        {formatCurrency(results.metodos_pago_registrados.qr_julieth)}
+                        {results.metodos_pago_registrados.total_transferencias_con_excedente_formatted || formatCurrency(results.metodos_pago_registrados.qr_julieth)}
                       </div>
+                      {/* Mostrar detalle con excedentes si existe */}
+                      {results.metodos_pago_registrados.detalle_transferencias && (
+                        <div className="mt-2 pt-2 border-t border-blue-100">
+                          <div className="text-xs text-gray-600 italic bg-blue-50 rounded p-2">
+                            {results.metodos_pago_registrados.detalle_transferencias}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1599,8 +1695,18 @@ const Dashboard = () => {
                         )}
                         <div className="flex justify-between pt-1 border-t border-gray-200">
                           <span className="text-gray-700 font-medium">Total:</span>
-                          <span className="font-bold text-orange-700">{formatCurrency(results.metodos_pago_registrados.total_solo_tarjetas)}</span>
+                          <span className="font-bold text-orange-700">
+                            {results.metodos_pago_registrados.total_datafono_con_excedente_formatted || formatCurrency(results.metodos_pago_registrados.total_solo_tarjetas)}
+                          </span>
                         </div>
+                        {/* Mostrar detalle con excedentes si existe */}
+                        {results.metodos_pago_registrados.detalle_datafono && (
+                          <div className="pt-1 mt-1 border-t border-orange-100">
+                            <div className="text-xs text-gray-600 italic bg-orange-50 rounded p-2">
+                              {results.metodos_pago_registrados.detalle_datafono}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1631,26 +1737,6 @@ const Dashboard = () => {
                       <div className="text-xs font-medium text-gray-600 mb-1">Addi</div>
                       <div className="text-lg font-bold text-blue-900">
                         {formatCurrency(results.metodos_pago_registrados.addi_datafono)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Efectivo de Ventas */}
-                  {results.alegra.results.cash.total > 0 && (
-                    <div className="bg-white rounded-lg p-3 border border-green-100 shadow-sm">
-                      <div className="text-xs font-medium text-gray-600 mb-1">Efectivo de Ventas</div>
-                      <div className="text-lg font-bold text-green-900">
-                        {results.alegra.results.cash.formatted}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Valor a Consignar */}
-                  {results.cash_count.consignar.efectivo_para_consignar_final > 0 && (
-                    <div className="bg-white rounded-lg p-3 border border-emerald-100 shadow-sm">
-                      <div className="text-xs font-medium text-gray-600 mb-1">Valor a Consignar</div>
-                      <div className="text-lg font-bold text-emerald-900">
-                        {results.cash_count.consignar.efectivo_para_consignar_final_formatted}
                       </div>
                     </div>
                   )}
