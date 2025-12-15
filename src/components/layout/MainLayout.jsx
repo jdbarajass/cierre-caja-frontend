@@ -240,46 +240,35 @@ const MainLayout = ({ children }) => {
                     <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] min-w-[280px]">
                       <div className="py-2">
                         <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/analytics'); toggleMenu('advanced'); }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <TrendingUp className="w-5 h-5 text-orange-600" />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">Analytics Avanzado</div>
-                            <div className="text-xs text-gray-500">Análisis inteligente de ventas</div>
-                          </div>
-                        </button>
-
-                        <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/productos'); toggleMenu('advanced'); }}
+                          onClick={() => { handleNavigation('/estadisticas-avanzadas/inventario'); toggleMenu('advanced'); }}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >
                           <Package className="w-5 h-5 text-green-600" />
                           <div>
-                            <div className="text-sm font-semibold text-gray-900">Análisis de Productos</div>
-                            <div className="text-xs text-gray-500">Reportes desde Alegra</div>
+                            <div className="text-sm font-semibold text-gray-900">Inventario Detallado</div>
+                            <div className="text-xs text-gray-500">Consulta directa desde Alegra</div>
                           </div>
                         </button>
 
                         <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/inventario'); toggleMenu('advanced'); }}
+                          onClick={() => { handleNavigation('/estadisticas-avanzadas/ventas-totales'); toggleMenu('advanced'); }}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >
-                          <BarChart3 className="w-5 h-5 text-teal-600" />
+                          <TrendingUp className="w-5 h-5 text-purple-600" />
                           <div>
-                            <div className="text-sm font-semibold text-gray-900">Análisis de Inventario</div>
-                            <div className="text-xs text-gray-500">Estado del inventario</div>
+                            <div className="text-sm font-semibold text-gray-900">Totales de Ventas</div>
+                            <div className="text-xs text-gray-500">Ventas agrupadas por día/mes</div>
                           </div>
                         </button>
 
                         <button
-                          onClick={() => { handleNavigation('/monthly-sales'); toggleMenu('advanced'); }}
+                          onClick={() => { handleNavigation('/estadisticas-avanzadas/documentos'); toggleMenu('advanced'); }}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >
-                          <ShoppingBag className="w-5 h-5 text-purple-600" />
+                          <FileText className="w-5 h-5 text-blue-600" />
                           <div>
-                            <div className="text-sm font-semibold text-gray-900">Ventas Mensuales</div>
-                            <div className="text-xs text-gray-500">Reporte mensual</div>
+                            <div className="text-sm font-semibold text-gray-900">Documentos de Venta</div>
+                            <div className="text-xs text-gray-500">Facturas detalladas</div>
                           </div>
                         </button>
                       </div>

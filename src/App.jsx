@@ -14,6 +14,12 @@ const ProductosLayout = lazy(() => import('./components/productos/ProductosLayou
 const AnalyticsLayout = lazy(() => import('./components/analytics/AnalyticsLayout'));
 const InventoryLayout = lazy(() => import('./components/inventory/InventoryLayout'));
 
+// Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
+const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
+const DirectInventory = lazy(() => import('./components/direct/DirectInventory'));
+const DirectSalesTotals = lazy(() => import('./components/direct/DirectSalesTotals'));
+const DirectSalesDocuments = lazy(() => import('./components/direct/DirectSalesDocuments'));
+
 // Componente de carga
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -57,23 +63,13 @@ const App = () => {
                 }
               />
 
-              {/* Estadísticas Avanzadas - Mismas páginas con APIs directas (Solo Admin) */}
+              {/* Estadísticas Avanzadas - APIs Directas de Alegra (Solo Admin) */}
               <Route
-                path="/estadisticas-avanzadas/analytics"
+                path="/estadisticas-avanzadas"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
-                      <AnalyticsLayout />
-                    </MainLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/estadisticas-avanzadas/productos"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <MainLayout>
-                      <ProductosLayout />
+                      <DirectStatsDashboard />
                     </MainLayout>
                   </ProtectedRoute>
                 }
@@ -83,7 +79,27 @@ const App = () => {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
-                      <InventoryLayout />
+                      <DirectInventory />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/estadisticas-avanzadas/ventas-totales"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <DirectSalesTotals />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/estadisticas-avanzadas/documentos"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <DirectSalesDocuments />
                     </MainLayout>
                   </ProtectedRoute>
                 }
