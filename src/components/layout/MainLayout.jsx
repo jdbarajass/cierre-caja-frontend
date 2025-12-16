@@ -19,7 +19,7 @@ import {
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
 import { useSalesStats } from '../../hooks/useSalesStats';
-import SalesComparisonYoY from '../SalesComparisonYoY';
+import { useSalesComparison } from '../../hooks/useSalesComparison';
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -27,6 +27,7 @@ const MainLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState(getColombiaTimeString());
   const { dailySales, monthlySales, loading: salesLoading } = useSalesStats();
+  const { dailyComparison, monthlyComparison, loading: comparisonLoading } = useSalesComparison();
 
   // Función para formatear moneda
   const formatCurrency = (value) => {
@@ -194,7 +195,16 @@ const MainLayout = ({ children }) => {
                     {salesLoading ? (
                       <p className="text-sm font-bold text-green-700 animate-pulse">Cargando...</p>
                     ) : (
-                      <p className="text-base font-bold text-green-700">{formatCurrency(dailySales)}</p>
+                      <>
+                        <p className="text-base font-bold text-green-700">{formatCurrency(dailySales)}</p>
+                        {!comparisonLoading && dailyComparison && (
+                          <p className={`text-[10px] font-semibold mt-0.5 flex items-center gap-1 ${
+                            dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}% vs 2024
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -207,7 +217,16 @@ const MainLayout = ({ children }) => {
                     {salesLoading ? (
                       <p className="text-sm font-bold text-blue-700 animate-pulse">Cargando...</p>
                     ) : (
-                      <p className="text-base font-bold text-blue-700">{formatCurrency(monthlySales)}</p>
+                      <>
+                        <p className="text-base font-bold text-blue-700">{formatCurrency(monthlySales)}</p>
+                        {!comparisonLoading && monthlyComparison && (
+                          <p className={`text-[10px] font-semibold mt-0.5 flex items-center gap-1 ${
+                            monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
+                          }`}>
+                            {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}% vs 2024
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -391,11 +410,6 @@ const MainLayout = ({ children }) => {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Comparación con Año Anterior */}
-          <div className="mt-6">
-            <SalesComparisonYoY />
           </div>
         </div>
       </div>
