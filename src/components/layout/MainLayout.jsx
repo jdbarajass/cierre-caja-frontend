@@ -78,14 +78,6 @@ const MainLayout = ({ children }) => {
   // Sección 2: Estadísticas Avanzadas (Solo Admin - APIs directas)
   const advancedStatsSection = [
     {
-      id: 'inventario-detallado',
-      label: 'Inventario Detallado',
-      path: '/estadisticas-avanzadas/inventario',
-      icon: Package,
-      color: 'green',
-      roles: ['admin']
-    },
-    {
       id: 'ventas-totales',
       label: 'Totales de Ventas',
       path: '/estadisticas-avanzadas/ventas-totales',
@@ -286,17 +278,6 @@ const MainLayout = ({ children }) => {
                   {expandedMenu === 'advanced' && (
                     <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] min-w-[280px]">
                       <div className="py-2">
-                        <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/inventario'); toggleMenu('advanced'); }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <Package className="w-5 h-5 text-green-600" />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">Inventario Detallado</div>
-                            <div className="text-xs text-gray-500">Consulta directa desde Alegra</div>
-                          </div>
-                        </button>
-
                         <button
                           onClick={() => { handleNavigation('/estadisticas-avanzadas/ventas-totales'); toggleMenu('advanced'); }}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"

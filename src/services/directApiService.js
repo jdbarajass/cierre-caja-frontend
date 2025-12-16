@@ -4,10 +4,10 @@ import logger from '../utils/logger';
 /**
  * Servicio para interactuar con los endpoints directos de Alegra (APIs Avanzadas)
  * Estos endpoints son más rápidos y consultan directamente las APIs de Alegra
- * Timeout configurado a 30 segundos para consultas
+ * Timeout configurado a 3 minutos para consultas de inventario completo
  */
 
-const DIRECT_API_TIMEOUT = 30000;
+const DIRECT_API_TIMEOUT = 180000; // 3 minutos para traer todo el inventario
 
 /**
  * Obtiene el reporte de valor de inventario

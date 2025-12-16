@@ -12,11 +12,10 @@ const Dashboard = lazy(() => import('./components/Dashboard'));
 const MonthlySales = lazy(() => import('./components/MonthlySales'));
 const ProductosLayout = lazy(() => import('./components/productos/ProductosLayout'));
 const AnalyticsLayout = lazy(() => import('./components/analytics/AnalyticsLayout'));
-const InventoryLayout = lazy(() => import('./components/inventory/InventoryLayout'));
+const UnifiedInventoryAnalysis = lazy(() => import('./components/inventory/UnifiedInventoryAnalysis'));
 
 // Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
 const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
-const DirectInventory = lazy(() => import('./components/direct/DirectInventory'));
 const DirectSalesTotals = lazy(() => import('./components/direct/DirectSalesTotals'));
 const DirectSalesDocuments = lazy(() => import('./components/direct/DirectSalesDocuments'));
 
@@ -75,16 +74,6 @@ const App = () => {
                 }
               />
               <Route
-                path="/estadisticas-avanzadas/inventario"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <MainLayout>
-                      <DirectInventory />
-                    </MainLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/estadisticas-avanzadas/ventas-totales"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
@@ -131,7 +120,7 @@ const App = () => {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
-                      <InventoryLayout />
+                      <UnifiedInventoryAnalysis />
                     </MainLayout>
                   </ProtectedRoute>
                 }
