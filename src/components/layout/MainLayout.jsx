@@ -16,7 +16,7 @@ import {
   DollarSign,
   Calendar
 } from 'lucide-react';
-import { getColombiaTimeString, getColombiaTodayString } from '../../utils/dateUtils';
+import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
 import { useSalesStats } from '../../hooks/useSalesStats';
 import SalesComparisonYoY from '../SalesComparisonYoY';
@@ -395,7 +395,7 @@ const MainLayout = ({ children }) => {
 
           {/* Comparación con Año Anterior */}
           <div className="mt-6">
-            <SalesComparisonYoY date={getColombiaTodayString()} />
+            <SalesComparisonYoY />
           </div>
         </div>
       </div>
