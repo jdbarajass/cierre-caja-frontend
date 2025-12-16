@@ -300,8 +300,23 @@ export const getSalesComparisonYoY = async (date = null) => {
   return await response.json();
 };
 
+/**
+ * Obtiene la URL de la documentación de la API (Swagger)
+ * @returns {string} - URL completa de la documentación
+ */
+export const getApiDocsUrl = () => {
+  if (isLocalEnvironment()) {
+    // En local, intentar con la IP de red primero, luego localhost
+    return `${API_LOCALS[0]}/api/docs`;
+  } else {
+    // En producción, usar el backend desplegado
+    return `${API_DEPLOYED}/api/docs`;
+  }
+};
+
 export default {
   authenticatedFetch,
   submitCashClosing,
   getSalesComparisonYoY,
+  getApiDocsUrl,
 };

@@ -14,12 +14,14 @@ import {
   Zap,
   ChevronDown,
   DollarSign,
-  Calendar
+  Calendar,
+  BookOpen
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
 import { useSalesStats } from '../../hooks/useSalesStats';
 import { useSalesComparison } from '../../hooks/useSalesComparison';
+import { getApiDocsUrl } from '../../services/api';
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -254,6 +256,16 @@ const MainLayout = ({ children }) => {
                       {user.role === 'admin' ? 'Administrador' : user.role === 'sales' ? 'Ventas' : user.role}
                     </span>
                   )}
+                  <a
+                    href={getApiDocsUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                    title="Ver documentación de la API"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    Documentación API
+                  </a>
                   <button
                     onClick={handleLogout}
                     className="mt-1 flex items-center gap-2 text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
