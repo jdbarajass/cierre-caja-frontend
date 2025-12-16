@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -53,10 +53,30 @@ const MainLayout = ({ children }) => {
 
   // Estado para menús desplegables
   const [expandedMenu, setExpandedMenu] = useState(null);
+  const dropdownRef = useRef(null);
 
   const toggleMenu = (menuId) => {
     setExpandedMenu(expandedMenu === menuId ? null : menuId);
   };
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setExpandedMenu(null);
+      }
+    };
+
+    // Agregar event listener cuando el menú está abierto
+    if (expandedMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Limpiar event listener
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [expandedMenu]);
 
   // Estructura de navegación con 3 secciones
   // Sección 1: Cierre de Caja (Admin y Sales)
@@ -316,7 +336,7 @@ const MainLayout = ({ children }) => {
 
               {/* Dropdown: Estadísticas (Solo Admin) */}
               {canAccess(['admin']) && visibleStatsItems.length > 0 && (
-                <div className="relative">
+                <div ref={dropdownRef} className="relative">
                   <button
                     onClick={() => toggleMenu('stats')}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'stats'
