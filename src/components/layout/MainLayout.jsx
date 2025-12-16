@@ -173,13 +173,14 @@ const MainLayout = ({ children }) => {
       {/* Header Principal - Navegación */}
       <header className="bg-white shadow-lg border-b-4 border-gradient-to-r from-blue-500 to-purple-500 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Logo, Título y Ventas */}
-          <div className="py-4 border-b border-gray-200">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+          {/* Header Reorganizado - Estructura de 2 Filas */}
+          <div className="py-3">
+            {/* FILA 1: Logo + Título | Usuario + Acciones */}
+            <div className="flex items-center justify-between mb-4">
               {/* Logo y Título */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                  <BarChart3 className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <BarChart3 className="w-7 h-7 text-white" />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Sistema de Gestión Koaj Puerto Carreño</h1>
@@ -187,95 +188,104 @@ const MainLayout = ({ children }) => {
                 </div>
               </div>
 
-              {/* Ventas del Día y Mes */}
-              <div className="flex items-center gap-4">
-                {/* Venta del Día */}
-                <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-lg border border-green-200">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  <div>
+              {/* Info de Usuario y Acciones */}
+              <div className="hidden lg:flex items-center gap-3">
+                {/* Avatar */}
+                <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+
+                {/* Info y Acciones */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-gray-900">{user?.name || user?.email || 'Administrador KOAJ'}</p>
+                    {user?.role && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-sm">
+                        {user.role === 'admin' ? 'Admin' : user.role === 'sales' ? 'Ventas' : user.role}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={getApiDocsUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                      title="Ver documentación de la API"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      Docs API
+                    </a>
+                    <span className="text-gray-300">•</span>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      Salir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* FILA 2: Tarjetas de Ventas (Centradas) */}
+            <div className="flex items-center justify-center gap-6 pt-3 border-t border-gray-100">
+              {/* Venta del Día */}
+              <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 px-6 py-3 rounded-xl border-2 border-green-200 shadow-md hover:shadow-lg transition-shadow min-w-[280px]">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center shadow-sm">
+                    <DollarSign className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
                     {salesLoading ? (
                       <p className="text-sm font-bold text-green-700 animate-pulse">Cargando...</p>
                     ) : (
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                        {/* Fila 1 */}
-                        <p className="text-xs text-gray-600 font-medium">Venta del Día</p>
+                      <>
+                        <p className="text-xs text-gray-600 font-semibold mb-1">VENTA DEL DÍA</p>
+                        <p className="text-xl font-bold text-green-700 mb-0.5">{formatCurrency(dailySales)}</p>
                         {!comparisonLoading && dailyComparison && (
-                          <p className="text-xs text-gray-600 text-right font-medium">2024: {dailyComparison.previous.formatted}</p>
+                          <div className="flex items-center justify-between text-xs mt-1">
+                            <span className="text-gray-500 font-medium">2024: {dailyComparison.previous.formatted}</span>
+                            <span className={`font-bold flex items-center gap-1 ${
+                              dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}%
+                            </span>
+                          </div>
                         )}
-
-                        {/* Fila 2 */}
-                        <p className="text-base font-bold text-green-700">{formatCurrency(dailySales)}</p>
-                        {!comparisonLoading && dailyComparison && (
-                          <p className={`text-xs font-semibold flex items-center justify-end gap-1 ${
-                            dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}% ({dailyComparison.differenceFormatted})
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Venta del Mes */}
-                <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-lg border border-blue-200">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <div>
-                    {salesLoading ? (
-                      <p className="text-sm font-bold text-blue-700 animate-pulse">Cargando...</p>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                        {/* Fila 1 */}
-                        <p className="text-xs text-gray-600 font-medium">Venta del Mes</p>
-                        {!comparisonLoading && monthlyComparison && (
-                          <p className="text-xs text-gray-600 text-right font-medium">2024: {monthlyComparison.previous.formatted}</p>
-                        )}
-
-                        {/* Fila 2 */}
-                        <p className="text-base font-bold text-blue-700">{formatCurrency(monthlySales)}</p>
-                        {!comparisonLoading && monthlyComparison && (
-                          <p className={`text-xs font-semibold flex items-center justify-end gap-1 ${
-                            monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
-                          }`}>
-                            {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}% ({monthlyComparison.differenceFormatted})
-                          </p>
-                        )}
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Info de Usuario (Desktop) */}
-              <div className="hidden lg:flex items-center gap-4">
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Usuario</p>
-                  <p className="text-sm font-semibold text-gray-900">{user?.name || user?.email || 'Administrador'}</p>
-                  {user?.role && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                      {user.role === 'admin' ? 'Administrador' : user.role === 'sales' ? 'Ventas' : user.role}
-                    </span>
-                  )}
-                  <a
-                    href={getApiDocsUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                    title="Ver documentación de la API"
-                  >
-                    <BookOpen className="w-3 h-3" />
-                    Documentación API
-                  </a>
-                  <button
-                    onClick={handleLogout}
-                    className="mt-1 flex items-center gap-2 text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
-                  >
-                    <LogOut className="w-3 h-3" />
-                    Cerrar Sesión
-                  </button>
-                </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
-                  <User className="w-5 h-5 text-white" />
+              {/* Venta del Mes */}
+              <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200 shadow-md hover:shadow-lg transition-shadow min-w-[280px]">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                    <Calendar className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    {salesLoading ? (
+                      <p className="text-sm font-bold text-blue-700 animate-pulse">Cargando...</p>
+                    ) : (
+                      <>
+                        <p className="text-xs text-gray-600 font-semibold mb-1">VENTA DEL MES</p>
+                        <p className="text-xl font-bold text-blue-700 mb-0.5">{formatCurrency(monthlySales)}</p>
+                        {!comparisonLoading && monthlyComparison && (
+                          <div className="flex items-center justify-between text-xs mt-1">
+                            <span className="text-gray-500 font-medium">2024: {monthlyComparison.previous.formatted}</span>
+                            <span className={`font-bold flex items-center gap-1 ${
+                              monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
+                            }`}>
+                              {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}%
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
