@@ -79,11 +79,12 @@ const MainLayout = ({ children }) => {
     }
   ];
 
-  // Sección 2: Estadísticas Avanzadas (Solo Admin - APIs directas)
-  const advancedStatsSection = [
+  // Sección 2: Estadísticas Unificadas (Solo Admin)
+  const statsSection = [
     {
       id: 'ventas-totales',
       label: 'Totales de Ventas',
+      description: 'Ventas agrupadas por día/mes',
       path: '/estadisticas-avanzadas/ventas-totales',
       icon: TrendingUp,
       color: 'purple',
@@ -92,45 +93,44 @@ const MainLayout = ({ children }) => {
     {
       id: 'documentos-venta',
       label: 'Documentos de Venta',
+      description: 'Facturas detalladas',
       path: '/estadisticas-avanzadas/documentos',
       icon: FileText,
       color: 'blue',
       roles: ['admin']
-    }
-  ];
-
-  // Sección 3: Estadísticas Estándar (Solo Admin - APIs documentadas)
-  const standardStatsSection = [
+    },
     {
       id: 'analytics',
-      label: 'Analytics',
+      label: 'Analytics Avanzado',
+      description: 'Análisis inteligente de ventas',
       path: '/estadisticas-estandar/analytics',
       icon: BarChart3,
       color: 'orange',
       roles: ['admin']
     },
     {
-      id: 'inventario',
-      label: 'Inventario',
-      path: '/estadisticas-estandar/inventario',
-      icon: Package,
-      color: 'teal',
-      roles: ['admin']
-    },
-    {
       id: 'productos',
-      label: 'Productos',
+      label: 'Análisis de Productos',
+      description: 'Reportes desde Alegra',
       path: '/estadisticas-estandar/productos',
       icon: ShoppingBag,
       color: 'green',
+      roles: ['admin']
+    },
+    {
+      id: 'inventario',
+      label: 'Análisis de Inventario',
+      description: 'Estado del inventario',
+      path: '/estadisticas-estandar/inventario',
+      icon: Package,
+      color: 'teal',
       roles: ['admin']
     }
   ];
 
   // Filtrar secciones según el rol del usuario
   const visibleDashboardItems = dashboardSection.filter(item => canAccess(item.roles));
-  const visibleAdvancedStatsItems = advancedStatsSection.filter(item => canAccess(item.roles));
-  const visibleStandardStatsItems = standardStatsSection.filter(item => canAccess(item.roles));
+  const visibleStatsItems = statsSection.filter(item => canAccess(item.roles));
 
 
   const isActive = (path) => {
@@ -304,112 +304,48 @@ const MainLayout = ({ children }) => {
                 );
               })}
 
-              {/* Dropdown: Estadísticas Avanzadas (Solo Admin) */}
-              {canAccess(['admin']) && (
+              {/* Dropdown: Estadísticas (Solo Admin) */}
+              {canAccess(['admin']) && visibleStatsItems.length > 0 && (
                 <div className="relative">
                   <button
-                    onClick={() => toggleMenu('advanced')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'advanced'
-                      ? 'bg-yellow-500 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border border-gray-200'
+                    onClick={() => toggleMenu('stats')}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'stats'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 border border-gray-200'
                       }`}
                   >
-                    <Zap className={`w-4 h-4 ${expandedMenu === 'advanced' ? 'text-white' : ''}`} />
-                    <span className="text-sm">⚡ Estadísticas Avanzadas</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${expandedMenu === 'advanced' ? 'rotate-180' : ''}`} />
+                    <BarChart3 className={`w-4 h-4 ${expandedMenu === 'stats' ? 'text-white' : ''}`} />
+                    <span className="text-sm">📊 Estadísticas</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${expandedMenu === 'stats' ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {expandedMenu === 'advanced' && (
+                  {expandedMenu === 'stats' && (
                     <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] min-w-[280px]">
                       <div className="py-2">
-                        <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/ventas-totales'); toggleMenu('advanced'); }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <TrendingUp className="w-5 h-5 text-purple-600" />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">Totales de Ventas</div>
-                            <div className="text-xs text-gray-500">Ventas agrupadas por día/mes</div>
-                          </div>
-                        </button>
+                        {visibleStatsItems.map((item) => {
+                          const Icon = item.icon;
+                          const colorClasses = {
+                            purple: 'text-purple-600',
+                            blue: 'text-blue-600',
+                            orange: 'text-orange-600',
+                            green: 'text-green-600',
+                            teal: 'text-teal-600'
+                          };
 
-                        <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/documentos'); toggleMenu('advanced'); }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <FileText className="w-5 h-5 text-blue-600" />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">Documentos de Venta</div>
-                            <div className="text-xs text-gray-500">Facturas detalladas</div>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Dropdown: Estadísticas Estándar (Solo Admin) */}
-              {canAccess(['admin']) && (
-                <div className="relative">
-                  <button
-                    onClick={() => toggleMenu('standard')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'standard'
-                      ? 'bg-blue-500 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-200'
-                      }`}
-                  >
-                    <BarChart3 className={`w-4 h-4 ${expandedMenu === 'standard' ? 'text-white' : ''}`} />
-                    <span className="text-sm">📊 Estadísticas Estándar</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${expandedMenu === 'standard' ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {expandedMenu === 'standard' && (
-                    <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] min-w-[280px]">
-                      <div className="py-2">
-                        <button
-                          onClick={() => { handleNavigation('/estadisticas-estandar/analytics'); toggleMenu('standard'); }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <TrendingUp className="w-5 h-5 text-orange-600" />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">Analytics Avanzado</div>
-                            <div className="text-xs text-gray-500">Análisis inteligente de ventas</div>
-                          </div>
-                        </button>
-
-                        <button
-                          onClick={() => { handleNavigation('/estadisticas-estandar/productos'); toggleMenu('standard'); }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <Package className="w-5 h-5 text-green-600" />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">Análisis de Productos</div>
-                            <div className="text-xs text-gray-500">Reportes desde Alegra</div>
-                          </div>
-                        </button>
-
-                        <button
-                          onClick={() => { handleNavigation('/estadisticas-estandar/inventario'); toggleMenu('standard'); }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <BarChart3 className="w-5 h-5 text-teal-600" />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">Análisis de Inventario</div>
-                            <div className="text-xs text-gray-500">Estado del inventario</div>
-                          </div>
-                        </button>
-
-                        <button
-                          onClick={() => { handleNavigation('/monthly-sales'); toggleMenu('standard'); }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <ShoppingBag className="w-5 h-5 text-purple-600" />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">Ventas Mensuales</div>
-                            <div className="text-xs text-gray-500">Reporte mensual</div>
-                          </div>
-                        </button>
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => { handleNavigation(item.path); toggleMenu('stats'); }}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                            >
+                              <Icon className={`w-5 h-5 ${colorClasses[item.color] || 'text-gray-600'}`} />
+                              <div>
+                                <div className="text-sm font-semibold text-gray-900">{item.label}</div>
+                                <div className="text-xs text-gray-500">{item.description}</div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
