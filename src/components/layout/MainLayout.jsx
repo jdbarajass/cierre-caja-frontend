@@ -198,13 +198,13 @@ const MainLayout = ({ children }) => {
                         {/* Fila 1 */}
                         <p className="text-xs text-gray-600 font-medium">Venta del Día</p>
                         {!comparisonLoading && dailyComparison && (
-                          <p className="text-[10px] text-gray-500 text-right">2024: {dailyComparison.previous.formatted}</p>
+                          <p className="text-xs text-gray-600 text-right font-medium">2024: {dailyComparison.previous.formatted}</p>
                         )}
 
                         {/* Fila 2 */}
                         <p className="text-base font-bold text-green-700">{formatCurrency(dailySales)}</p>
                         {!comparisonLoading && dailyComparison && (
-                          <p className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${
+                          <p className={`text-xs font-semibold flex items-center justify-end gap-1 ${
                             dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}% ({dailyComparison.differenceFormatted})
@@ -226,13 +226,13 @@ const MainLayout = ({ children }) => {
                         {/* Fila 1 */}
                         <p className="text-xs text-gray-600 font-medium">Venta del Mes</p>
                         {!comparisonLoading && monthlyComparison && (
-                          <p className="text-[10px] text-gray-500 text-right">2024: {monthlyComparison.previous.formatted}</p>
+                          <p className="text-xs text-gray-600 text-right font-medium">2024: {monthlyComparison.previous.formatted}</p>
                         )}
 
                         {/* Fila 2 */}
                         <p className="text-base font-bold text-blue-700">{formatCurrency(monthlySales)}</p>
                         {!comparisonLoading && monthlyComparison && (
-                          <p className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${
+                          <p className={`text-xs font-semibold flex items-center justify-end gap-1 ${
                             monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
                           }`}>
                             {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}% ({monthlyComparison.differenceFormatted})
