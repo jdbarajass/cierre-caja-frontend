@@ -1658,21 +1658,46 @@ const Dashboard = () => {
                 {/* Grid secundario - Métodos de pago y detalles */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 
-                  {/* QR */}
-                  {results.metodos_pago_registrados.qr_julieth > 0 && (
-                    <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
-                      <div className="text-xs font-medium text-gray-600 mb-1">QR (Transferencias)</div>
-                      <div className="text-lg font-bold text-blue-900">
-                        {results.metodos_pago_registrados.total_transferencias_con_excedente_formatted || formatCurrency(results.metodos_pago_registrados.qr_julieth)}
-                      </div>
-                      {/* Mostrar detalle con excedentes si existe */}
-                      {results.metodos_pago_registrados.detalle_transferencias && (
-                        <div className="mt-2 pt-2 border-t border-blue-100">
-                          <div className="text-xs text-gray-600 italic bg-blue-50 rounded p-2">
-                            {results.metodos_pago_registrados.detalle_transferencias}
+                  {/* Transferencias - Solo mostrar si hay al menos una transferencia */}
+                  {(results.metodos_pago_registrados.nequi_luz_helena > 0 ||
+                    results.metodos_pago_registrados.daviplata_jose > 0 ||
+                    results.metodos_pago_registrados.qr_julieth > 0) && (
+                    <div className="bg-white rounded-lg p-3 border border-purple-200 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-2">Transferencias</div>
+                      <div className="space-y-1 text-xs">
+                        {results.metodos_pago_registrados.nequi_luz_helena > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Nequi:</span>
+                            <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}</span>
                           </div>
+                        )}
+                        {results.metodos_pago_registrados.daviplata_jose > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Daviplata:</span>
+                            <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.daviplata_jose)}</span>
+                          </div>
+                        )}
+                        {results.metodos_pago_registrados.qr_julieth > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">QR:</span>
+                            <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.qr_julieth)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between pt-1 border-t border-gray-200">
+                          <span className="text-gray-700 font-medium">Total:</span>
+                          <span className="font-bold text-purple-700">
+                            {results.metodos_pago_registrados.total_transferencias_con_excedente_formatted || formatCurrency(results.metodos_pago_registrados.total_transferencias_registradas)}
+                          </span>
                         </div>
-                      )}
+                        {/* Mostrar detalle con excedentes si existe */}
+                        {results.metodos_pago_registrados.detalle_transferencias && (
+                          <div className="pt-1 mt-1 border-t border-purple-100">
+                            <div className="text-xs text-gray-600 italic bg-purple-50 rounded p-2">
+                              {results.metodos_pago_registrados.detalle_transferencias}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 

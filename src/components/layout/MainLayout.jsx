@@ -12,16 +12,31 @@ import {
   LogOut,
   FileText,
   Zap,
-  ChevronDown
+  ChevronDown,
+  DollarSign,
+  Calendar
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
+import { useSalesStats } from '../../hooks/useSalesStats';
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState(getColombiaTimeString());
+  const { dailySales, monthlySales, loading: salesLoading } = useSalesStats();
+
+  // Función para formatear moneda
+  const formatCurrency = (value) => {
+    if (value === null || value === undefined) return 'Cargando...';
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
 
   // Actualizar reloj cada segundo
   useEffect(() => {
@@ -162,38 +177,70 @@ const MainLayout = ({ children }) => {
       {/* Header Principal - Navegación */}
       <header className="bg-white shadow-lg border-b-4 border-gradient-to-r from-blue-500 to-purple-500 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Logo y Título */}
-          <div className="flex items-center justify-between py-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <BarChart3 className="w-6 h-6 text-white" />
+          {/* Logo, Título y Ventas */}
+          <div className="py-4 border-b border-gray-200">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+              {/* Logo y Título */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                  <BarChart3 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Sistema de Gestión Koaj Puerto Carreño</h1>
+                  <p className="text-xs text-gray-500">Panel de Control</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Sistema de Gestión Koaj Puerto Carreño</h1>
-                <p className="text-xs text-gray-500">Panel de Control</p>
-              </div>
-            </div>
 
-            {/* Info de Usuario (Desktop) */}
-            <div className="hidden md:flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-xs text-gray-500">Usuario</p>
-                <p className="text-sm font-semibold text-gray-900">{user?.name || user?.email || 'Administrador'}</p>
-                {user?.role && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                    {user.role === 'admin' ? 'Administrador' : user.role === 'sales' ? 'Ventas' : user.role}
-                  </span>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="mt-1 flex items-center gap-2 text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
-                >
-                  <LogOut className="w-3 h-3" />
-                  Cerrar Sesión
-                </button>
+              {/* Ventas del Día y Mes */}
+              <div className="flex items-center gap-4">
+                {/* Venta del Día */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-lg border border-green-200">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">Venta del Día</p>
+                    {salesLoading ? (
+                      <p className="text-sm font-bold text-green-700 animate-pulse">Cargando...</p>
+                    ) : (
+                      <p className="text-base font-bold text-green-700">{formatCurrency(dailySales)}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Venta del Mes */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-lg border border-blue-200">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">Venta del Mes</p>
+                    {salesLoading ? (
+                      <p className="text-sm font-bold text-blue-700 animate-pulse">Cargando...</p>
+                    ) : (
+                      <p className="text-base font-bold text-blue-700">{formatCurrency(monthlySales)}</p>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
-                <User className="w-5 h-5 text-white" />
+
+              {/* Info de Usuario (Desktop) */}
+              <div className="hidden lg:flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Usuario</p>
+                  <p className="text-sm font-semibold text-gray-900">{user?.name || user?.email || 'Administrador'}</p>
+                  {user?.role && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                      {user.role === 'admin' ? 'Administrador' : user.role === 'sales' ? 'Ventas' : user.role}
+                    </span>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="mt-1 flex items-center gap-2 text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    Cerrar Sesión
+                  </button>
+                </div>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
+                  <User className="w-5 h-5 text-white" />
+                </div>
               </div>
             </div>
           </div>
