@@ -607,49 +607,6 @@ const Dashboard = () => {
             />
           </div>
 
-          {/* Base de Caja */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Base de Caja</h2>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs sm:text-sm text-gray-600">
-                Monto base que debe quedar en caja (puede modificarse según temporada)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm sm:text-base">$</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={baseCaja.toLocaleString('es-CO')}
-                  onChange={(e) => {
-                    const numericValue = e.target.value.replace(/[^\d]/g, '');
-                    const parsedValue = parseInt(numericValue) || 0;
-                    if (parsedValue >= 0 && parsedValue <= 10000000) {
-                      setBaseCaja(parsedValue);
-                    }
-                  }}
-                  onFocus={(e) => {
-                    e.target.value = baseCaja.toString();
-                    e.target.select();
-                  }}
-                  onBlur={(e) => {
-                    const numericValue = e.target.value.replace(/[^\d]/g, '');
-                    const parsedValue = parseInt(numericValue) || 450000;
-                    setBaseCaja(parsedValue);
-                    e.target.value = parsedValue.toLocaleString('es-CO');
-                  }}
-                  className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm sm:text-base font-semibold"
-                  placeholder="450000"
-                />
-              </div>
-              <p className="text-xs text-gray-500 italic">
-                Por defecto: $450.000 COP
-              </p>
-            </div>
-          </div>
-
           {/* Monedas y Billetes */}
           <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
@@ -1091,7 +1048,7 @@ const Dashboard = () => {
           </div>
 
           {/* Botones de Acción */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
             <button
               onClick={handleSubmit}
               disabled={loading}
@@ -1109,6 +1066,40 @@ const Dashboard = () => {
                 </>
               )}
             </button>
+
+            {/* Campo compacto de Base de Caja */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+              <label className="text-xs sm:text-sm text-gray-600 whitespace-nowrap font-medium">Base Caja:</label>
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={baseCaja.toLocaleString('es-CO')}
+                  onChange={(e) => {
+                    const numericValue = e.target.value.replace(/[^\d]/g, '');
+                    const parsedValue = parseInt(numericValue) || 0;
+                    if (parsedValue >= 0 && parsedValue <= 10000000) {
+                      setBaseCaja(parsedValue);
+                    }
+                  }}
+                  onFocus={(e) => {
+                    e.target.value = baseCaja.toString();
+                    e.target.select();
+                  }}
+                  onBlur={(e) => {
+                    const numericValue = e.target.value.replace(/[^\d]/g, '');
+                    const parsedValue = parseInt(numericValue) || 450000;
+                    setBaseCaja(parsedValue);
+                    e.target.value = parsedValue.toLocaleString('es-CO');
+                  }}
+                  className="w-28 sm:w-32 pl-5 pr-2 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="450000"
+                  title="Base de caja personalizable según temporada"
+                />
+              </div>
+            </div>
+
             <button
               onClick={handleReset}
               className="sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all text-sm sm:text-base"
