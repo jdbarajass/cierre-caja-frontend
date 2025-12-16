@@ -191,23 +191,26 @@ const MainLayout = ({ children }) => {
                 <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-lg border border-green-200">
                   <DollarSign className="w-5 h-5 text-green-600" />
                   <div>
-                    <p className="text-xs text-gray-600 font-medium">Venta del Día</p>
                     {salesLoading ? (
                       <p className="text-sm font-bold text-green-700 animate-pulse">Cargando...</p>
                     ) : (
-                      <>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                        {/* Fila 1 */}
+                        <p className="text-xs text-gray-600 font-medium">Venta del Día</p>
+                        {!comparisonLoading && dailyComparison && (
+                          <p className="text-[10px] text-gray-500 text-right">2024: {dailyComparison.previous.formatted}</p>
+                        )}
+
+                        {/* Fila 2 */}
                         <p className="text-base font-bold text-green-700">{formatCurrency(dailySales)}</p>
                         {!comparisonLoading && dailyComparison && (
-                          <div className="text-[10px] mt-0.5 space-y-0.5">
-                            <p className="text-gray-500">2024: {dailyComparison.previous.formatted}</p>
-                            <p className={`font-semibold flex items-center gap-1 ${
-                              dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}% ({dailyComparison.differenceFormatted})
-                            </p>
-                          </div>
+                          <p className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${
+                            dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}% ({dailyComparison.differenceFormatted})
+                          </p>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -216,23 +219,26 @@ const MainLayout = ({ children }) => {
                 <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-lg border border-blue-200">
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <div>
-                    <p className="text-xs text-gray-600 font-medium">Venta del Mes</p>
                     {salesLoading ? (
                       <p className="text-sm font-bold text-blue-700 animate-pulse">Cargando...</p>
                     ) : (
-                      <>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                        {/* Fila 1 */}
+                        <p className="text-xs text-gray-600 font-medium">Venta del Mes</p>
+                        {!comparisonLoading && monthlyComparison && (
+                          <p className="text-[10px] text-gray-500 text-right">2024: {monthlyComparison.previous.formatted}</p>
+                        )}
+
+                        {/* Fila 2 */}
                         <p className="text-base font-bold text-blue-700">{formatCurrency(monthlySales)}</p>
                         {!comparisonLoading && monthlyComparison && (
-                          <div className="text-[10px] mt-0.5 space-y-0.5">
-                            <p className="text-gray-500">2024: {monthlyComparison.previous.formatted}</p>
-                            <p className={`font-semibold flex items-center gap-1 ${
-                              monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
-                            }`}>
-                              {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}% ({monthlyComparison.differenceFormatted})
-                            </p>
-                          </div>
+                          <p className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${
+                            monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
+                          }`}>
+                            {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}% ({monthlyComparison.differenceFormatted})
+                          </p>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
