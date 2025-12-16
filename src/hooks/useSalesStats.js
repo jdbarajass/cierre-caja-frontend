@@ -26,16 +26,16 @@ export const useSalesStats = () => {
       const month = String(colombiaDate.getMonth() + 1).padStart(2, '0');
       const startDate = `${year}-${month}-01`;
 
-      logger.info('📊 Obteniendo estadísticas de ventas', { today, startDate });
+      logger.info('📊 Obteniendo estadísticas de ventas (quick-summary)', { today, startDate });
       console.log('📅 Fechas:', { today, startDate });
 
-      // Timeout más largo para ventas mensuales (3 minutos)
-      const SALES_TIMEOUT = 180000;
+      // Timeout más corto ya que el endpoint es más rápido (30 segundos)
+      const SALES_TIMEOUT = 30000;
 
-      // Peticiones en paralelo
+      // Peticiones en paralelo usando el nuevo endpoint rápido
       const [dailyResponse, monthlyResponse] = await Promise.all([
-        // Ventas del día (mismo día como start y end)
-        authenticatedFetch(`/api/monthly_sales?start_date=${today}&end_date=${today}`, {
+        // Ventas del día (mismo día como from y to)
+        authenticatedFetch(`/api/sales/quick-summary?from=${today}&to=${today}`, {
           method: 'GET',
         }, SALES_TIMEOUT)
           .then(async res => {
@@ -45,7 +45,7 @@ export const useSalesStats = () => {
               return null;
             }
             const data = await res.json();
-            console.log('✅ Ventas del día:', data);
+            console.log('✅ Ventas del día (quick):', data);
             return data;
           })
           .catch(err => {
@@ -54,7 +54,7 @@ export const useSalesStats = () => {
           }),
 
         // Ventas del mes
-        authenticatedFetch(`/api/monthly_sales?start_date=${startDate}&end_date=${today}`, {
+        authenticatedFetch(`/api/sales/quick-summary?from=${startDate}&to=${today}`, {
           method: 'GET',
         }, SALES_TIMEOUT)
           .then(async res => {
@@ -64,7 +64,7 @@ export const useSalesStats = () => {
               return null;
             }
             const data = await res.json();
-            console.log('✅ Ventas del mes:', data);
+            console.log('✅ Ventas del mes (quick):', data);
             return data;
           })
           .catch(err => {
@@ -73,13 +73,13 @@ export const useSalesStats = () => {
           })
       ]);
 
-      // Procesar ventas del día
-      const dailySales = dailyResponse?.total_vendido?.total || 0;
-      console.log('💰 Venta del día procesada:', dailySales);
+      // Procesar ventas del día (nueva estructura de respuesta)
+      const dailySales = dailyResponse?.total_sales || 0;
+      console.log('💰 Venta del día procesada:', dailySales, `(${dailyResponse?.document_count || 0} documentos)`);
 
-      // Procesar ventas del mes
-      const monthlySales = monthlyResponse?.total_vendido?.total || 0;
-      console.log('💰 Venta del mes procesada:', monthlySales);
+      // Procesar ventas del mes (nueva estructura de respuesta)
+      const monthlySales = monthlyResponse?.total_sales || 0;
+      console.log('💰 Venta del mes procesada:', monthlySales, `(${monthlyResponse?.document_count || 0} documentos)`);
 
       setSalesStats({
         dailySales,
