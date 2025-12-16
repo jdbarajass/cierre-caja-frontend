@@ -19,6 +19,7 @@ const Dashboard = () => {
 
   const [date, setDate] = useState(getColombiaTodayString());
   const [closingDate, setClosingDate] = useState(getColombiaTodayString());
+  const [baseCaja, setBaseCaja] = useState(450000);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
@@ -245,6 +246,7 @@ const Dashboard = () => {
         timezone: 'America/Bogota',
         utc_offset: '-05:00',
         request_timestamp: getColombiaTimestamp(),
+        base_objetivo: parseInt(baseCaja) || 450000,
         coins: Object.fromEntries(Object.entries(coins).map(([k, v]) => [k, parseInt(v) || 0])),
         bills: Object.fromEntries(Object.entries(bills).map(([k, v]) => [k, parseInt(v) || 0])),
         excedentes: excedentesArray,
@@ -603,6 +605,49 @@ const Dashboard = () => {
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
               required
             />
+          </div>
+
+          {/* Base de Caja */}
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Base de Caja</h2>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs sm:text-sm text-gray-600">
+                Monto base que debe quedar en caja (puede modificarse según temporada)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm sm:text-base">$</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={baseCaja.toLocaleString('es-CO')}
+                  onChange={(e) => {
+                    const numericValue = e.target.value.replace(/[^\d]/g, '');
+                    const parsedValue = parseInt(numericValue) || 0;
+                    if (parsedValue >= 0 && parsedValue <= 10000000) {
+                      setBaseCaja(parsedValue);
+                    }
+                  }}
+                  onFocus={(e) => {
+                    e.target.value = baseCaja.toString();
+                    e.target.select();
+                  }}
+                  onBlur={(e) => {
+                    const numericValue = e.target.value.replace(/[^\d]/g, '');
+                    const parsedValue = parseInt(numericValue) || 450000;
+                    setBaseCaja(parsedValue);
+                    e.target.value = parsedValue.toLocaleString('es-CO');
+                  }}
+                  className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm sm:text-base font-semibold"
+                  placeholder="450000"
+                />
+              </div>
+              <p className="text-xs text-gray-500 italic">
+                Por defecto: $450.000 COP
+              </p>
+            </div>
           </div>
 
           {/* Monedas y Billetes */}
