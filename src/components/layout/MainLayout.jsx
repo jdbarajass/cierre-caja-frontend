@@ -11,11 +11,11 @@ import {
   User,
   LogOut,
   FileText,
-  Zap,
   ChevronDown,
   DollarSign,
   Calendar,
-  BookOpen
+  BookOpen,
+  ChevronRight
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -30,6 +30,12 @@ const MainLayout = ({ children }) => {
   const [currentTime, setCurrentTime] = useState(getColombiaTimeString());
   const { dailySales, monthlySales, loading: salesLoading } = useSalesStats();
   const { dailyComparison, monthlyComparison, loading: comparisonLoading } = useSalesComparison();
+
+  // Estados para dropdowns
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [statsDropdownOpen, setStatsDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
+  const statsDropdownRef = useRef(null);
 
   // Función para formatear moneda
   const formatCurrency = (value) => {
@@ -51,35 +57,22 @@ const MainLayout = ({ children }) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Estado para menús desplegables
-  const [expandedMenu, setExpandedMenu] = useState(null);
-  const dropdownRef = useRef(null);
-
-  const toggleMenu = (menuId) => {
-    setExpandedMenu(expandedMenu === menuId ? null : menuId);
-  };
-
-  // Cerrar menú al hacer clic fuera
+  // Cerrar dropdowns al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setExpandedMenu(null);
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setUserDropdownOpen(false);
+      }
+      if (statsDropdownRef.current && !statsDropdownRef.current.contains(event.target)) {
+        setStatsDropdownOpen(false);
       }
     };
 
-    // Agregar event listener cuando el menú está abierto
-    if (expandedMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    // Limpiar event listener
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [expandedMenu]);
-
-  // Estructura de navegación con 3 secciones
-  // Sección 1: Cierre de Caja (Admin y Sales)
+  // Estructura de navegación
   const dashboardSection = [
     {
       id: 'dashboard',
@@ -95,11 +88,10 @@ const MainLayout = ({ children }) => {
       path: '/monthly-sales',
       icon: ShoppingBag,
       color: 'purple',
-      roles: ['sales'] // Solo sales, admin ve esto en otra sección si es necesario
+      roles: ['sales']
     }
   ];
 
-  // Sección 2: Estadísticas Unificadas (Solo Admin)
   const statsSection = [
     {
       id: 'ventas-totales',
@@ -148,10 +140,8 @@ const MainLayout = ({ children }) => {
     }
   ];
 
-  // Filtrar secciones según el rol del usuario
   const visibleDashboardItems = dashboardSection.filter(item => canAccess(item.roles));
   const visibleStatsItems = statsSection.filter(item => canAccess(item.roles));
-
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -159,6 +149,7 @@ const MainLayout = ({ children }) => {
 
   const handleNavigation = (path) => {
     navigate(path);
+    setStatsDropdownOpen(false);
   };
 
   const handleLogout = () => {
@@ -166,110 +157,214 @@ const MainLayout = ({ children }) => {
     navigate('/login');
   };
 
-  const getActiveColor = (color) => {
-    const colors = {
-      blue: 'bg-blue-600 text-white',
-      purple: 'bg-purple-600 text-white',
-      green: 'bg-green-600 text-white',
-      orange: 'bg-orange-600 text-white',
-      teal: 'bg-teal-600 text-white'
-    };
-    return colors[color] || 'bg-gray-600 text-white';
-  };
-
-  const getHoverColor = (color) => {
-    const colors = {
-      blue: 'hover:bg-blue-50 hover:text-blue-700',
-      purple: 'hover:bg-purple-50 hover:text-purple-700',
-      green: 'hover:bg-green-50 hover:text-green-700',
-      orange: 'hover:bg-orange-50 hover:text-orange-700',
-      teal: 'hover:bg-teal-50 hover:text-teal-700'
-    };
-    return colors[color] || 'hover:bg-gray-50 hover:text-gray-700';
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col">
-      {/* Header Principal - Navegación */}
-      <header className="bg-white shadow-lg border-b-4 border-gradient-to-r from-blue-500 to-purple-500 sticky top-0 z-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* HEADER PRINCIPAL COMPACTO - 60px */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header Reorganizado - Estructura de 2 Filas */}
-          <div className="py-3">
-            {/* FILA 1: Logo + Título | Usuario + Acciones */}
-            <div className="flex items-center justify-between mb-4">
-              {/* Logo y Título */}
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <BarChart3 className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Sistema de Gestión Koaj Puerto Carreño</h1>
-                  <p className="text-xs text-gray-500">Panel de Control</p>
-                </div>
+          <div className="flex items-center justify-between h-16">
+            {/* Logo + Breadcrumb */}
+            <div className="flex items-center gap-4">
+              {/* Logo KOAJ */}
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                <BarChart3 className="w-6 h-6 text-white" />
               </div>
 
-              {/* Info de Usuario y Acciones */}
-              <div className="hidden lg:flex items-center gap-3">
-                {/* Avatar */}
-                <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-
-                {/* Info y Acciones */}
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-gray-900">{user?.name || user?.email || 'Administrador KOAJ'}</p>
-                    {user?.role && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-sm">
-                        {user.role === 'admin' ? 'Admin' : user.role === 'sales' ? 'Ventas' : user.role}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <a
-                      href={getApiDocsUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                      title="Ver documentación de la API"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      Docs API
-                    </a>
-                    <span className="text-gray-300">•</span>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      Salir
-                    </button>
-                  </div>
-                </div>
+              {/* Breadcrumb */}
+              <div className="hidden md:flex items-center gap-2 text-sm">
+                <span className="font-semibold text-gray-900">Sistema KOAJ</span>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-600">Puerto Carreño</span>
               </div>
             </div>
 
-            {/* FILA 2: Tarjetas de Ventas (Centradas) */}
-            <div className="flex items-center justify-center gap-6 pt-3 border-t border-gray-100">
+            {/* Navegación + Reloj + Usuario */}
+            <div className="flex items-center gap-6">
+              {/* Navegación Horizontal */}
+              <nav className="hidden lg:flex items-center gap-1">
+                {/* Cierre de Caja / Ventas Mensuales */}
+                {visibleDashboardItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.path);
+
+                  // Colores por tipo de item
+                  const iconColors = {
+                    blue: { bg: 'bg-blue-50', icon: 'text-blue-600' },
+                    purple: { bg: 'bg-purple-50', icon: 'text-purple-600' }
+                  };
+                  const colors = iconColors[item.color] || iconColors.blue;
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavigation(item.path)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${active
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      <div className={`w-7 h-7 ${colors.bg} rounded-lg flex items-center justify-center`}>
+                        <Icon className={`w-4 h-4 ${colors.icon}`} />
+                      </div>
+                      {item.label}
+                    </button>
+                  );
+                })}
+
+                {/* Estadísticas Dropdown */}
+                {canAccess(['admin']) && visibleStatsItems.length > 0 && (
+                  <div ref={statsDropdownRef} className="relative">
+                    <button
+                      onClick={() => setStatsDropdownOpen(!statsDropdownOpen)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${statsDropdownOpen || location.pathname.includes('/estadisticas')
+                          ? 'bg-indigo-50 text-indigo-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      <div className="w-7 h-7 bg-indigo-50 rounded-lg flex items-center justify-center">
+                        <BarChart3 className="w-4 h-4 text-indigo-600" />
+                      </div>
+                      Estadísticas
+                      <ChevronDown className={`w-4 h-4 transition-transform ${statsDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {statsDropdownOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                        {visibleStatsItems.map((item) => {
+                          const Icon = item.icon;
+                          const colorConfig = {
+                            purple: {
+                              icon: 'text-purple-600',
+                              bg: 'bg-purple-50',
+                              hover: 'hover:bg-purple-100'
+                            },
+                            blue: {
+                              icon: 'text-blue-600',
+                              bg: 'bg-blue-50',
+                              hover: 'hover:bg-blue-100'
+                            },
+                            orange: {
+                              icon: 'text-orange-600',
+                              bg: 'bg-orange-50',
+                              hover: 'hover:bg-orange-100'
+                            },
+                            green: {
+                              icon: 'text-green-600',
+                              bg: 'bg-green-50',
+                              hover: 'hover:bg-green-100'
+                            },
+                            teal: {
+                              icon: 'text-teal-600',
+                              bg: 'bg-teal-50',
+                              hover: 'hover:bg-teal-100'
+                            }
+                          };
+
+                          const colors = colorConfig[item.color] || colorConfig.blue;
+
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => handleNavigation(item.path)}
+                              className={`w-full text-left px-3 py-2.5 ${colors.hover} transition-colors flex items-start gap-3`}
+                            >
+                              <div className={`w-8 h-8 ${colors.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                                <Icon className={`w-4 h-4 ${colors.icon}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-semibold text-gray-900">{item.label}</div>
+                                <div className="text-xs text-gray-500 leading-tight">{item.description}</div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Docs API */}
+                <a
+                  href={getApiDocsUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-7 h-7 bg-teal-50 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-4 h-4 text-teal-600" />
+                  </div>
+                  Docs
+                </a>
+              </nav>
+
+              {/* Reloj */}
+              <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
+                <div className="w-7 h-7 bg-slate-50 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-slate-600" />
+                </div>
+                <span className="font-medium">{currentTime}</span>
+              </div>
+
+              {/* Usuario Dropdown */}
+              <div ref={userDropdownRef} className="relative">
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
+                    <User className="w-5 h-5 text-violet-600" />
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <p className="text-sm font-medium text-gray-900">{user?.name || user?.email || 'Admin'}</p>
+                    <p className="text-xs text-gray-500">{user?.role === 'admin' ? 'Administrador' : 'Ventas'}</p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {userDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{user?.name || user?.email || 'Administrador KOAJ'}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span className="text-sm font-medium">Cerrar Sesión</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* SECCIÓN DE MÉTRICAS - Solo visible en Dashboard */}
+      {isActive('/dashboard') && (
+        <div className="bg-gray-50 border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Venta del Día */}
-              <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 px-6 py-3 rounded-xl border-2 border-green-200 shadow-md hover:shadow-lg transition-shadow min-w-[280px]">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center shadow-sm">
-                    <DollarSign className="w-6 h-6 text-white" />
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
+                    <DollarSign className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-600 mb-1">Venta del Día</p>
                     {salesLoading ? (
-                      <p className="text-sm font-bold text-green-700 animate-pulse">Cargando...</p>
+                      <p className="text-2xl font-bold text-gray-900 animate-pulse">Cargando...</p>
                     ) : (
                       <>
-                        <p className="text-xs text-gray-600 font-semibold mb-1">VENTA DEL DÍA</p>
-                        <p className="text-xl font-bold text-green-700 mb-0.5">{formatCurrency(dailySales)}</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-2">{formatCurrency(dailySales)}</p>
                         {!comparisonLoading && dailyComparison && (
-                          <div className="flex items-center justify-between text-xs mt-1">
-                            <span className="text-gray-500 font-medium">2024: {dailyComparison.previous.formatted}</span>
-                            <span className={`font-bold flex items-center gap-1 ${
-                              dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
-                            }`}>
+                          <div className="flex items-center gap-3 text-sm">
+                            <span className="text-gray-500">vs 2024: {dailyComparison.previous.formatted}</span>
+                            <span className={`font-semibold flex items-center gap-1 ${dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
+                              }`}>
                               {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}%
                             </span>
                           </div>
@@ -281,24 +376,23 @@ const MainLayout = ({ children }) => {
               </div>
 
               {/* Venta del Mes */}
-              <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200 shadow-md hover:shadow-lg transition-shadow min-w-[280px]">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-                    <Calendar className="w-6 h-6 text-white" />
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
+                    <Calendar className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-600 mb-1">Venta del Mes</p>
                     {salesLoading ? (
-                      <p className="text-sm font-bold text-blue-700 animate-pulse">Cargando...</p>
+                      <p className="text-2xl font-bold text-gray-900 animate-pulse">Cargando...</p>
                     ) : (
                       <>
-                        <p className="text-xs text-gray-600 font-semibold mb-1">VENTA DEL MES</p>
-                        <p className="text-xl font-bold text-blue-700 mb-0.5">{formatCurrency(monthlySales)}</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-2">{formatCurrency(monthlySales)}</p>
                         {!comparisonLoading && monthlyComparison && (
-                          <div className="flex items-center justify-between text-xs mt-1">
-                            <span className="text-gray-500 font-medium">2024: {monthlyComparison.previous.formatted}</span>
-                            <span className={`font-bold flex items-center gap-1 ${
-                              monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
-                            }`}>
+                          <div className="flex items-center gap-3 text-sm">
+                            <span className="text-gray-500">vs 2024: {monthlyComparison.previous.formatted}</span>
+                            <span className={`font-semibold flex items-center gap-1 ${monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
+                              }`}>
                               {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}%
                             </span>
                           </div>
@@ -310,113 +404,22 @@ const MainLayout = ({ children }) => {
               </div>
             </div>
           </div>
-
-          {/* Navegación Principal - Todo en una línea horizontal */}
-          <nav className="py-3">
-            <div className="flex items-center gap-2 pb-2">
-              {/* Botones principales (Cierre de Caja, Ventas Mensuales para Sales) */}
-              {visibleDashboardItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.path);
-
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavigation(item.path)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
-                      ? `${getActiveColor(item.color)} shadow-md transform scale-105`
-                      : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
-                      }`}
-                  >
-                    <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
-                    <span className="text-sm">{item.label}</span>
-                  </button>
-                );
-              })}
-
-              {/* Dropdown: Estadísticas (Solo Admin) */}
-              {canAccess(['admin']) && visibleStatsItems.length > 0 && (
-                <div ref={dropdownRef} className="relative">
-                  <button
-                    onClick={() => toggleMenu('stats')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'stats'
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 border border-gray-200'
-                      }`}
-                  >
-                    <BarChart3 className={`w-4 h-4 ${expandedMenu === 'stats' ? 'text-white' : ''}`} />
-                    <span className="text-sm">📊 Estadísticas</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${expandedMenu === 'stats' ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {expandedMenu === 'stats' && (
-                    <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] min-w-[280px]">
-                      <div className="py-2">
-                        {visibleStatsItems.map((item) => {
-                          const Icon = item.icon;
-                          const colorClasses = {
-                            purple: 'text-purple-600',
-                            blue: 'text-blue-600',
-                            orange: 'text-orange-600',
-                            green: 'text-green-600',
-                            teal: 'text-teal-600'
-                          };
-
-                          return (
-                            <button
-                              key={item.id}
-                              onClick={() => { handleNavigation(item.path); toggleMenu('stats'); }}
-                              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
-                            >
-                              <Icon className={`w-5 h-5 ${colorClasses[item.color] || 'text-gray-600'}`} />
-                              <div>
-                                <div className="text-sm font-semibold text-gray-900">{item.label}</div>
-                                <div className="text-xs text-gray-500">{item.description}</div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </nav>
         </div>
-      </header>
+      )}
 
-      {/* Navbar Secundario - Reloj */}
-      <div className="py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-4">
-            <div className="flex items-center justify-center">
-              {/* Reloj */}
-              <div className="flex items-center gap-2 text-white">
-                <Clock className="w-5 h-5 text-white" />
-                <div>
-                  <p className="text-sm font-semibold">{currentTime}</p>
-                  <p className="text-xs text-white opacity-90">Hora de Colombia (UTC-5)</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Contenido Principal */}
+      {/* CONTENIDO PRINCIPAL */}
       <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </div>
       </main>
 
-      {/* Footer */}
+      {/* FOOTER */}
       <footer className="bg-white border-t border-gray-200 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-sm text-gray-600">
-              © {new Date().getFullYear()} Sistema de Gestión. Todos los derechos reservados.
+              © {new Date().getFullYear()} Sistema de Gestión KOAJ. Todos los derechos reservados.
             </p>
             <p className="text-xs text-gray-500">
               Versión 2.0 | Desarrollado con ❤️
