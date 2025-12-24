@@ -4,13 +4,20 @@ import logger from '../utils/logger';
 import { getColombiaTodayString, getColombiaDate } from '../utils/dateUtils';
 
 /**
- * Hook para obtener comparación de ventas año sobre año
+ * Hook consolidado para obtener TODAS las estadísticas de ventas
+ * Incluye ventas actuales Y comparación año sobre año
+ * Optimizado para reducir peticiones concurrentes y duplicadas
  * Usa el endpoint rápido /api/sales/quick-summary
  */
 export const useSalesComparison = () => {
   const [comparison, setComparison] = useState({
+    // Estadísticas actuales (antes en useSalesStats)
+    dailySales: null,
+    monthlySales: null,
+    // Comparaciones año sobre año
     dailyComparison: null,
     monthlyComparison: null,
+    nextDayLastYear: null,
     loading: true,
     error: null
   });
@@ -29,48 +36,68 @@ export const useSalesComparison = () => {
       const previousDay = String(previousYearDate.getDate()).padStart(2, '0');
       const todayLastYear = `${previousYear}-${previousMonth}-${previousDay}`;
 
+      // Calcular día siguiente del año anterior
+      const nextDayLastYearDate = new Date(previousYearDate);
+      nextDayLastYearDate.setDate(nextDayLastYearDate.getDate() + 1);
+      const nextDayYear = nextDayLastYearDate.getFullYear();
+      const nextDayMonth = String(nextDayLastYearDate.getMonth() + 1).padStart(2, '0');
+      const nextDayDay = String(nextDayLastYearDate.getDate()).padStart(2, '0');
+      const nextDayLastYear = `${nextDayYear}-${nextDayMonth}-${nextDayDay}`;
+
       // Obtener el primer día del mes actual y año anterior
       const currentYear = colombiaDate.getFullYear();
       const currentMonth = String(colombiaDate.getMonth() + 1).padStart(2, '0');
       const startOfMonth = `${currentYear}-${currentMonth}-01`;
       const startOfMonthLastYear = `${previousYear}-${previousMonth}-01`;
 
-      logger.info('📊 Obteniendo comparación año sobre año', {
+      logger.info('📊 Obteniendo estadísticas de ventas (optimizado - grupos secuenciales)', {
         today,
         todayLastYear,
+        nextDayLastYear,
         startOfMonth,
         startOfMonthLastYear
       });
 
-      const SALES_TIMEOUT = 30000; // 30 segundos
+      // No especificar timeout personalizado - usar timeout adaptativo de api.js
+      // (45s para primera conexión, 15s después)
 
-      // Peticiones en paralelo
-      const [
-        currentDayResponse,
-        previousDayResponse,
-        currentMonthResponse,
-        previousMonthResponse
-      ] = await Promise.all([
+      // ✅ GRUPO 1 (PRIORITARIO): Datos actuales - 2 peticiones en paralelo
+      // Estos datos se muestran inmediatamente en la UI
+      logger.info('🔄 Grupo 1: Obteniendo datos actuales (día y mes)...');
+      const [currentDayResponse, currentMonthResponse] = await Promise.all([
         // Día actual
         authenticatedFetch(`/api/sales/quick-summary?from=${today}&to=${today}`, {
           method: 'GET',
-        }, SALES_TIMEOUT).then(res => res.ok ? res.json() : null).catch(() => null),
-
-        // Mismo día año anterior
-        authenticatedFetch(`/api/sales/quick-summary?from=${todayLastYear}&to=${todayLastYear}`, {
-          method: 'GET',
-        }, SALES_TIMEOUT).then(res => res.ok ? res.json() : null).catch(() => null),
+        }).then(res => res.ok ? res.json() : null).catch(() => null),
 
         // Mes actual
         authenticatedFetch(`/api/sales/quick-summary?from=${startOfMonth}&to=${today}`, {
           method: 'GET',
-        }, SALES_TIMEOUT).then(res => res.ok ? res.json() : null).catch(() => null),
+        }).then(res => res.ok ? res.json() : null).catch(() => null)
+      ]);
+      logger.info('✅ Grupo 1 completado');
+
+      // ✅ GRUPO 2 (SECUNDARIO): Datos del año anterior - 3 peticiones en paralelo
+      // Estos datos son para comparación, menos críticos
+      logger.info('🔄 Grupo 2: Obteniendo datos año anterior (comparación)...');
+      logger.info(`📅 Petición día siguiente: /api/sales/quick-summary?from=${nextDayLastYear}&to=${nextDayLastYear}`);
+      const [previousDayResponse, nextDayLastYearResponse, previousMonthResponse] = await Promise.all([
+        // Mismo día año anterior
+        authenticatedFetch(`/api/sales/quick-summary?from=${todayLastYear}&to=${todayLastYear}`, {
+          method: 'GET',
+        }).then(res => res.ok ? res.json() : null).catch(() => null),
+
+        // Día siguiente del año anterior
+        authenticatedFetch(`/api/sales/quick-summary?from=${nextDayLastYear}&to=${nextDayLastYear}`, {
+          method: 'GET',
+        }).then(res => res.ok ? res.json() : null).catch(() => null),
 
         // Mismo mes año anterior
         authenticatedFetch(`/api/sales/quick-summary?from=${startOfMonthLastYear}&to=${todayLastYear}`, {
           method: 'GET',
-        }, SALES_TIMEOUT).then(res => res.ok ? res.json() : null).catch(() => null)
+        }).then(res => res.ok ? res.json() : null).catch(() => null)
       ]);
+      logger.info('✅ Grupo 2 completado');
 
       // Procesar datos del día
       const currentDayTotal = currentDayResponse?.total_sales || 0;
@@ -88,6 +115,15 @@ export const useSalesComparison = () => {
         ? ((currentMonthTotal - previousMonthTotal) / previousMonthTotal) * 100
         : (currentMonthTotal > 0 ? 100 : 0);
 
+      // Procesar datos del día siguiente del año anterior
+      const nextDayTotal = nextDayLastYearResponse?.total_sales || 0;
+
+      logger.info('📅 Día siguiente del año anterior:', {
+        fecha: nextDayLastYear,
+        respuesta: nextDayLastYearResponse,
+        total: nextDayTotal
+      });
+
       // Formatear moneda
       const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', {
@@ -99,6 +135,10 @@ export const useSalesComparison = () => {
       };
 
       setComparison({
+        // Estadísticas actuales (para reemplazar useSalesStats)
+        dailySales: currentDayTotal,
+        monthlySales: currentMonthTotal,
+        // Comparaciones año sobre año
         dailyComparison: {
           current: {
             date: today,
@@ -131,6 +171,11 @@ export const useSalesComparison = () => {
           percentageChange: Math.round(monthPercentageChange * 100) / 100,
           isGrowth: monthDifference >= 0
         },
+        nextDayLastYear: {
+          date: nextDayLastYear,
+          total: nextDayTotal,
+          formatted: formatCurrency(nextDayTotal)
+        },
         loading: false,
         error: null
       });
@@ -151,10 +196,10 @@ export const useSalesComparison = () => {
     // Cargar datos inicialmente
     fetchComparison();
 
-    // Actualizar cada 5 minutos (igual que useSalesStats)
+    // Actualizar cada 13 minutos (igual que useSalesStats)
     const interval = setInterval(() => {
       fetchComparison();
-    }, 5 * 60 * 1000);
+    }, 13 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);

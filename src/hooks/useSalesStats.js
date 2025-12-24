@@ -5,7 +5,7 @@ import { getColombiaTodayString, getColombiaDate } from '../utils/dateUtils';
 
 /**
  * Hook para obtener estadísticas de ventas del día y del mes actual
- * Se actualiza automáticamente cada 5 minutos
+ * Se actualiza automáticamente cada 13 minutos
  */
 export const useSalesStats = () => {
   const [salesStats, setSalesStats] = useState({
@@ -105,10 +105,10 @@ export const useSalesStats = () => {
     // Cargar datos inicialmente
     fetchSalesStats();
 
-    // Actualizar cada 5 minutos
+    // Actualizar cada 13 minutos
     const interval = setInterval(() => {
       fetchSalesStats();
-    }, 5 * 60 * 1000); // 5 minutos
+    }, 13 * 60 * 1000); // 13 minutos
 
     return () => clearInterval(interval);
   }, []);

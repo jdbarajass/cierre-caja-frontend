@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
-import { useSalesStats } from '../../hooks/useSalesStats';
 import { useSalesComparison } from '../../hooks/useSalesComparison';
 import { getApiDocsUrl } from '../../services/api';
 
@@ -28,8 +27,15 @@ const MainLayout = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState(getColombiaTimeString());
-  const { dailySales, monthlySales, loading: salesLoading } = useSalesStats();
-  const { dailyComparison, monthlyComparison, loading: comparisonLoading } = useSalesComparison();
+  // Hook consolidado que incluye estadísticas actuales Y comparaciones
+  const {
+    dailySales,
+    monthlySales,
+    dailyComparison,
+    monthlyComparison,
+    nextDayLastYear,
+    loading: salesLoading
+  } = useSalesComparison();
 
   // Estados para dropdowns
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -354,22 +360,50 @@ const MainLayout = ({ children }) => {
                     <DollarSign className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">Venta del Día</p>
+                    {/* NIVEL 1: Título */}
+                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Venta del Día</h3>
+
                     {salesLoading ? (
-                      <p className="text-2xl font-bold text-gray-900 animate-pulse">Cargando...</p>
+                      <div className="animate-pulse">
+                        <div className="h-12 bg-gray-200 rounded w-3/4 mb-3"></div>
+                        <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+                      </div>
                     ) : (
-                      <>
-                        <p className="text-3xl font-bold text-gray-900 mb-2">{formatCurrency(dailySales)}</p>
-                        {!comparisonLoading && dailyComparison && (
-                          <div className="flex items-center gap-3 text-sm">
-                            <span className="text-gray-500">vs 2024: {dailyComparison.previous.formatted}</span>
-                            <span className={`font-semibold flex items-center gap-1 ${dailyComparison.isGrowth ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                              {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}%
-                            </span>
+                      <div className="space-y-4">
+                        {/* NIVEL 1: Valor Principal - PROTAGONISTA */}
+                        <div>
+                          <p className="text-4xl font-bold text-gray-900 leading-none">
+                            {formatCurrency(dailySales)}
+                          </p>
+                        </div>
+
+                        {/* NIVEL 2: Comparación - SECUNDARIO */}
+                        {dailyComparison && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-500">vs 2024:</span>
+                            <span className="text-sm font-medium text-gray-600">{dailyComparison.previous.formatted}</span>
+                            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                              dailyComparison.isGrowth
+                                ? 'bg-green-50 text-green-700'
+                                : 'bg-red-50 text-red-700'
+                            }`}>
+                              <span className="text-xs font-semibold">
+                                {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}%
+                              </span>
+                            </div>
                           </div>
                         )}
-                      </>
+
+                        {/* NIVEL 3: Detalle - TERCIARIO */}
+                        {nextDayLastYear && nextDayLastYear.date && (
+                          <div className="pt-3 mt-3 border-t border-gray-100">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">Venta {nextDayLastYear.date}</span>
+                              <span className="font-medium text-gray-700">{nextDayLastYear.formatted}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -382,22 +416,40 @@ const MainLayout = ({ children }) => {
                     <Calendar className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">Venta del Mes</p>
+                    {/* NIVEL 1: Título */}
+                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Venta del Mes</h3>
+
                     {salesLoading ? (
-                      <p className="text-2xl font-bold text-gray-900 animate-pulse">Cargando...</p>
+                      <div className="animate-pulse">
+                        <div className="h-12 bg-gray-200 rounded w-3/4 mb-3"></div>
+                        <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+                      </div>
                     ) : (
-                      <>
-                        <p className="text-3xl font-bold text-gray-900 mb-2">{formatCurrency(monthlySales)}</p>
-                        {!comparisonLoading && monthlyComparison && (
-                          <div className="flex items-center gap-3 text-sm">
-                            <span className="text-gray-500">vs 2024: {monthlyComparison.previous.formatted}</span>
-                            <span className={`font-semibold flex items-center gap-1 ${monthlyComparison.isGrowth ? 'text-blue-600' : 'text-red-600'
-                              }`}>
-                              {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}%
-                            </span>
+                      <div className="space-y-4">
+                        {/* NIVEL 1: Valor Principal - PROTAGONISTA */}
+                        <div>
+                          <p className="text-4xl font-bold text-gray-900 leading-none">
+                            {formatCurrency(monthlySales)}
+                          </p>
+                        </div>
+
+                        {/* NIVEL 2: Comparación - SECUNDARIO */}
+                        {monthlyComparison && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-500">vs 2024:</span>
+                            <span className="text-sm font-medium text-gray-600">{monthlyComparison.previous.formatted}</span>
+                            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                              monthlyComparison.isGrowth
+                                ? 'bg-green-50 text-green-700'
+                                : 'bg-red-50 text-red-700'
+                            }`}>
+                              <span className="text-xs font-semibold">
+                                {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}%
+                              </span>
+                            </div>
                           </div>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>

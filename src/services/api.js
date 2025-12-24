@@ -7,10 +7,30 @@ const API_LOCALS = [
   'http://localhost:5000'
 ];
 const API_DEPLOYED = 'https://cierre-caja-api.onrender.com';
-const API_TIMEOUT = 15000; // 15 segundos de timeout para los backends locales
+const API_TIMEOUT = 15000; // 15 segundos de timeout para backends locales cuando ya está configurado
+const API_TIMEOUT_INITIAL = 45000; // 45 segundos para la PRIMERA conexión (descubrimiento)
 
 // Variable para almacenar qué backend está funcionando
 let workingApiBase = null;
+
+// Contador de fallos consecutivos por backend
+// Un backend solo se considera "caído" después de fallar múltiples veces
+const backendFailureCount = new Map();
+const MAX_FAILURES_BEFORE_BLACKLIST = 3; // Número de fallos antes de marcar como no disponible
+
+// Blacklist de backends locales que NO están disponibles en esta sesión
+// Esto evita intentar conectar con backends que ya sabemos que no responden
+let failedLocalBackends = new Set();
+
+/**
+ * Limpia la blacklist de backends locales fallidos y contadores
+ * Útil si se quiere reintentar con todos los backends
+ */
+export const clearBackendBlacklist = () => {
+  failedLocalBackends.clear();
+  backendFailureCount.clear();
+  logger.info('🔄 Blacklist y contadores de fallos limpiados - Se reintentará con todos los backends');
+};
 
 /**
  * Detecta si el frontend está corriendo en un entorno local
@@ -133,7 +153,7 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
     logger.info('Frontend en entorno DESPLEGADO - Usando solo backend desplegado');
   }
 
-  // Si ya sabemos qué backend funciona, usar ese primero
+  // Si ya sabemos qué backend funciona, usar ese EXCLUSIVAMENTE
   if (workingApiBase) {
     // Si estamos desplegados, solo usar el backend desplegado
     if (!isLocal && workingApiBase !== API_DEPLOYED) {
@@ -148,43 +168,74 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
           timeout
         );
 
-        // Si la respuesta es exitosa, retornarla
-        if (response.ok || response.status === 401 || response.status === 403) {
-          if (response.status === 401) {
-            secureRemoveItem('authToken');
-            secureRemoveItem('authUser');
-            window.location.href = '/login';
-            throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
-          }
-          if (response.status === 403) {
-            window.location.href = '/unauthorized';
-            throw new Error('No tienes permisos para acceder a este recurso.');
-          }
-          return response;
+        // Si la conexión fue exitosa (incluso con errores HTTP), retornar la respuesta
+        // Solo resetear workingApiBase si hay error de CONEXIÓN (timeout, red, etc.)
+        if (response.status === 401) {
+          secureRemoveItem('authToken');
+          secureRemoveItem('authUser');
+          window.location.href = '/login';
+          throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
         }
+        if (response.status === 403) {
+          window.location.href = '/unauthorized';
+          throw new Error('No tienes permisos para acceder a este recurso.');
+        }
+
+        // Retornar la respuesta (exitosa o con error HTTP)
+        // No resetear workingApiBase porque el backend SÍ está disponible
+        logger.info(`✅ Usando backend configurado ${workingApiBase} - No se intentará con otros backends`);
+        return response;
       } catch (error) {
-        logger.warn(`Error al conectar con ${workingApiBase}:`, error.message);
+        // Solo resetear si hay error de CONEXIÓN (no error HTTP)
+        logger.warn(`Error de conexión con ${workingApiBase}:`, error.message);
         lastError = error;
-        workingApiBase = null; // Resetear para intentar con todos
+
+        // Si el backend que estaba funcionando ahora falla, limpiar blacklist y contadores
+        // Las condiciones de red pueden haber cambiado
+        if (API_LOCALS.includes(workingApiBase)) {
+          failedLocalBackends.clear();
+          backendFailureCount.clear();
+          logger.info('🔄 Backend configurado falló - Limpiando blacklist y contadores para reintentar');
+        }
+
+        workingApiBase = null; // Resetear solo si hay error de conexión
       }
     }
   }
 
   // LÓGICA PARA ENTORNO LOCAL: Intentar backends locales primero
   if (isLocal) {
-    for (const localApi of API_LOCALS) {
+    // Filtrar backends locales que NO están en la blacklist
+    const availableLocalBackends = API_LOCALS.filter(api => !failedLocalBackends.has(api));
+
+    if (availableLocalBackends.length === 0) {
+      logger.warn('⚠️ Todos los backends locales están en blacklist - Saltando a backend desplegado');
+    } else if (failedLocalBackends.size > 0) {
+      logger.info(`ℹ️ Backends en blacklist (no se intentarán): ${Array.from(failedLocalBackends).join(', ')}`);
+    }
+
+    for (const localApi of availableLocalBackends) {
       try {
-        logger.info('Intentando conectar con backend local:', localApi);
-        const timeout = customTimeout || API_TIMEOUT;
+        // Usar timeout más largo si aún no tenemos backend configurado (primera conexión)
+        const isInitialDiscovery = !workingApiBase;
+        const timeout = customTimeout || (isInitialDiscovery ? API_TIMEOUT_INITIAL : API_TIMEOUT);
+
+        if (isInitialDiscovery) {
+          logger.info(`🔄 Descubriendo backend local (timeout ${timeout/1000}s):`, localApi);
+        } else {
+          logger.info(`🔄 Intentando conectar con backend local (timeout ${timeout/1000}s):`, localApi);
+        }
+
         response = await fetchWithTimeout(
           `${localApi}${endpoint}`,
           fetchOptions,
           timeout
         );
 
-        // Si la conexión fue exitosa, guardar que este backend local funciona
+        // ✅ ÉXITO: Resetear contador de fallos y guardar como backend funcionando
+        backendFailureCount.delete(localApi);
         workingApiBase = localApi;
-        logger.info('Conectado exitosamente con backend local:', localApi);
+        logger.info(`✅ Backend local configurado: ${localApi} - Peticiones futuras usarán este backend exclusivamente`);
 
         // Si la respuesta es 401 (no autorizado), limpiar la sesión
         if (response.status === 401) {
@@ -202,19 +253,30 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
 
         return response;
       } catch (localError) {
-        logger.warn(`Backend local ${localApi} no disponible`);
+        // Incrementar contador de fallos
+        const currentFailures = (backendFailureCount.get(localApi) || 0) + 1;
+        backendFailureCount.set(localApi, currentFailures);
+
+        // Solo agregar a blacklist después de múltiples fallos consecutivos
+        if (currentFailures >= MAX_FAILURES_BEFORE_BLACKLIST) {
+          failedLocalBackends.add(localApi);
+          logger.warn(`❌ Backend local ${localApi} falló ${currentFailures} veces - AGREGADO A BLACKLIST`);
+        } else {
+          logger.warn(`⚠️ Backend local ${localApi} falló (intento ${currentFailures}/${MAX_FAILURES_BEFORE_BLACKLIST}) - Reintentará en próxima petición`);
+        }
+
         lastError = localError;
-        // Continuar con el siguiente backend local
+        // Continuar con el siguiente backend local disponible
       }
     }
 
     // Si todos los backends locales fallaron, intentar con el desplegado como fallback
-    logger.warn('Backends locales no disponibles, intentando con backend desplegado como fallback...');
+    logger.warn('⚠️ TODOS los backends locales fallaron - Intentando con backend desplegado como último recurso');
   }
 
-  // Intentar con el backend desplegado
+  // Intentar con el backend desplegado (solo si estamos en producción O si los backends locales fallaron)
   try {
-    logger.info('Conectando con backend desplegado:', API_DEPLOYED);
+    logger.info('🌐 Conectando con backend desplegado:', API_DEPLOYED);
     const timeout = customTimeout || 30000; // Timeout más largo para el backend desplegado (30 segundos por defecto)
     response = await fetchWithTimeout(
       `${API_DEPLOYED}${endpoint}`,
@@ -319,4 +381,5 @@ export default {
   submitCashClosing,
   getSalesComparisonYoY,
   getApiDocsUrl,
+  clearBackendBlacklist,
 };

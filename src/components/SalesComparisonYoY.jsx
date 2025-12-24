@@ -7,7 +7,10 @@ import { useSalesComparison } from '../hooks/useSalesComparison';
  * Muestra ventas del día y mes actual comparadas con el mismo período del año anterior
  */
 const SalesComparisonYoY = () => {
-  const { dailyComparison, monthlyComparison, loading, error } = useSalesComparison();
+  const { dailyComparison, monthlyComparison, nextDayLastYear, loading, error } = useSalesComparison();
+
+  // Log para debugging
+  console.log('🔍 SalesComparisonYoY - nextDayLastYear:', nextDayLastYear);
 
   if (loading) {
     return (
@@ -106,6 +109,23 @@ const SalesComparisonYoY = () => {
           comparison={monthlyComparison}
         />
       </div>
+
+      {/* Día siguiente del año anterior */}
+      {nextDayLastYear && nextDayLastYear.date && (
+        <div className="mt-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-semibold text-blue-900">
+                Venta {nextDayLastYear.date}
+              </span>
+            </div>
+            <span className="text-sm font-bold text-blue-900">
+              {nextDayLastYear.formatted}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Información adicional */}
       <div className="mt-2 text-[10px] text-amber-700 bg-amber-100 rounded-lg p-1.5 border border-amber-300 text-center">
