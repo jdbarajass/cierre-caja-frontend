@@ -6,7 +6,8 @@ import {
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily
 } from '../services/accountsService';
-import { getColombiaTodayString, formatColombiaDateTime } from '../utils/dateUtils';
+import { getEntries, getPurchases } from '../services/repurchaseService';
+import { getColombiaDate, getColombiaTodayString, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
 
 const fmt = (v) =>
@@ -65,6 +66,12 @@ const CuentasLayout = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Balance disponible de "Cuentas Recompras" del mes en curso (lo que tiene
+  // Jhonatan: recibido del mes − compras del mes), para mostrarlo combinado
+  // con el saldo real de las cuentas en la tarjeta superior del Resumen.
+  const [repurchaseBalance, setRepurchaseBalance] = useState({ recibido: 0, compras: 0, balance: 0 });
+  const [loadingRepurchase, setLoadingRepurchase] = useState(false);
+
   const [movements, setMovements] = useState([]);
   const [movementFilters, setMovementFilters] = useState({ accountId: '', type: '', startDate: '', endDate: '' });
   const [loadingMovements, setLoadingMovements] = useState(false);
@@ -108,7 +115,34 @@ const CuentasLayout = () => {
     }
   }, [movementFilters]);
 
+  const loadRepurchaseBalance = useCallback(async () => {
+    setLoadingRepurchase(true);
+    try {
+      const today = getColombiaDate();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const [entriesData, purchasesData] = await Promise.all([
+        getEntries({ year, month }),
+        getPurchases({ year, month }),
+      ]);
+      const recibido = (entriesData.totals?.total_enviado || 0) + (entriesData.totals?.sobrante_acumulado || 0);
+      const compras = purchasesData.total_compras || 0;
+      setRepurchaseBalance({ recibido, compras, balance: recibido - compras });
+    } catch {
+      // No bloquea el resto del Resumen si esto falla - se deja en 0.
+    } finally {
+      setLoadingRepurchase(false);
+    }
+  }, []);
+
+  // Refresca cuentas Y balance de recompras juntos: crear/editar/eliminar un
+  // envío o una compra en "Cuentas Recompras" puede afectar a ambos.
+  const refreshSummary = useCallback(async () => {
+    await Promise.all([loadAccounts(), loadRepurchaseBalance()]);
+  }, [loadAccounts, loadRepurchaseBalance]);
+
   useEffect(() => { loadAccounts(); }, [loadAccounts]);
+  useEffect(() => { loadRepurchaseBalance(); }, [loadRepurchaseBalance]);
   useEffect(() => { if (tab === 'movimientos') loadMovements(); }, [tab, loadMovements]);
 
   const clearMessages = () => { setError(''); setSuccess(''); };
@@ -226,11 +260,37 @@ const CuentasLayout = () => {
 
       {tab === 'resumen' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Saldo total (real)</p>
-              <p className="text-3xl font-bold text-gray-900">{loading ? 'Cargando...' : fmt(totalBalance)}</p>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex items-center justify-between flex-wrap gap-6">
+            <div className="flex items-center flex-wrap gap-4">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Saldo total (real)</p>
+                <p className="text-3xl font-bold text-gray-900">{loading ? 'Cargando...' : fmt(totalBalance)}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Cuentas de la tienda</p>
+              </div>
+
+              <span className="hidden sm:block text-2xl text-gray-300 font-light">+</span>
+
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Balance disponible (Jhonatan)</p>
+                <p className="text-3xl font-bold text-indigo-700">
+                  {loadingRepurchase ? 'Cargando...' : fmt(repurchaseBalance.balance)}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {fmt(repurchaseBalance.recibido)} recibido − {fmt(repurchaseBalance.compras)} en compras (este mes)
+                </p>
+              </div>
+
+              <span className="hidden sm:block text-2xl text-gray-300 font-light">=</span>
+
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total</p>
+                <p className="text-3xl font-bold text-emerald-700">
+                  {(loading || loadingRepurchase) ? 'Cargando...' : fmt(totalBalance + repurchaseBalance.balance)}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">Tienda + Jhonatan</p>
+              </div>
             </div>
+
             <button
               onClick={handleSync}
               disabled={syncing}
@@ -251,6 +311,9 @@ const CuentasLayout = () => {
                     <span className="text-sm font-semibold text-gray-700">{a.name}</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{fmt(a.balance)}</p>
+                  {a.payment_key === 'cash' && (
+                    <p className="text-xs text-gray-400 mt-1">Está en el local, aún no se ha enviado</p>
+                  )}
                 </div>
               );
             })}
@@ -362,7 +425,7 @@ const CuentasLayout = () => {
         </div>
       )}
 
-      {tab === 'recompras' && <CuentasRecompras onEntriesChanged={loadAccounts} />}
+      {tab === 'recompras' && <CuentasRecompras onEntriesChanged={refreshSummary} />}
 
       {tab === 'movimientos' && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">

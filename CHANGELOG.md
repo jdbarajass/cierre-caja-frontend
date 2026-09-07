@@ -2,6 +2,27 @@
 
 ---
 
+## [2026-09-07] - Tarjeta combinada Saldo total + Balance disponible de Jhonatan en Resumen
+
+### 💰 `src/pages/CuentasLayout.jsx`
+- La tarjeta superior de la pestaña **Resumen** (Gestión → Cuentas) solo mostraba el "Saldo total (real)" de las cuentas de la tienda, sin ninguna referencia al dinero que tiene el socio **Jhonatan** en un momento dado (visible hasta ahora solo entrando a la pestaña "Cuentas Recompras")
+- Ahora muestra 3 números en una sola tarjeta: **Saldo total (real)** + **Balance disponible (Jhonatan)** = **Total**, con el desglose "$X recibido − $Y en compras (este mes)" debajo del segundo número
+- Nuevo `loadRepurchaseBalance()`: obtiene los envíos y compras del **mes calendario actual** (`getColombiaDate()`, no acumulado histórico — evita doble-contar el campo `sobrante_mes_anterior` que se llena a mano cada mes) vía `getEntries`/`getPurchases` de `repurchaseService.js`, con la misma fórmula que ya usa `CuentasRecompras.jsx` (`balance = recibido − compras`)
+- `onEntriesChanged` (pasado a `CuentasRecompras`) ahora dispara `refreshSummary()` (cuentas + balance de recompras juntos) en vez de solo `loadAccounts()`
+
+### 💰 `src/pages/CuentasRecompras.jsx`
+- `handlePurchaseSubmit` y `handleDeletePurchase` ahora también llaman a `onEntriesChanged?.()` — antes solo los envíos lo hacían (porque solo ellos tocan las cuentas de Resumen), pero ahora las compras también afectan el Total combinado mostrado en Resumen y deben refrescarlo
+
+### 🏷️ `src/pages/CuentasLayout.jsx` — nota en la tarjeta EFECTIVO
+- Se agregó el texto "Está en el local, aún no se ha enviado" bajo el saldo de la cuenta EFECTIVO (identificada por `payment_key === 'cash'`), para aclarar que ese dinero está físicamente en la tienda y solo pasa a las cuentas de Jhonatan cuando se envía
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos en los 2 archivos tocados
+- Probado en vivo con Playwright contra el backend real de Render (login con credenciales de producción del usuario): Resumen mostró "$6.613.796 + $73.605 = $6.687.401" ("$12.902.322 recibido − $12.828.717 en compras"), y la pestaña Cuentas Recompras (Septiembre 2026) mostró el mismo Balance disponible ($73.605) con idéntico desglose — coinciden
+- Probado también en viewport móvil (390×844): la tarjeta se apila correctamente sin overflow
+
+---
+
 ## [2026-09-02] - Fix: fechas de facturas corridas un día; peticiones redundantes en cada navegación
 
 Encontrados durante una revisión integral de la sección Estadísticas (login real contra producción + inspección de código), con capturas de red antes/después.

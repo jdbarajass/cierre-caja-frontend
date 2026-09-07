@@ -255,6 +255,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
       else { await createPurchase(payload); setSuccess('Compra registrada'); }
       setShowPurchaseForm(false); setEditingPurchaseId(null); setPurchaseForm(EMPTY_PURCHASE);
       await load();
+      onEntriesChanged?.(); // las compras también afectan el Balance disponible mostrado en Resumen
     } catch (e) { setError(e.message); }
     finally { setSavingPurchase(false); setTimeout(() => setSuccess(''), 3000); }
   };
@@ -270,7 +271,11 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
 
   const handleDeletePurchase = async (id) => {
     if (!window.confirm('¿Eliminar esta compra?')) return;
-    try { await deletePurchase(id); await load(); } catch (e) { setError(e.message); }
+    try {
+      await deletePurchase(id);
+      await load();
+      onEntriesChanged?.(); // las compras también afectan el Balance disponible mostrado en Resumen
+    } catch (e) { setError(e.message); }
   };
 
   // total de cada fila de entrada
