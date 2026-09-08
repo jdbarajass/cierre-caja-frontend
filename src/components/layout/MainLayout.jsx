@@ -25,12 +25,14 @@ import {
   Briefcase,
   Wallet,
   Menu,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
 import { useSalesComparison } from '../../hooks/useSalesComparison';
-import { getApiDocsUrl } from '../../services/api';
+import { getApiDocsUrl, getPendingClosingDates } from '../../services/api';
+import { formatDateStringToColombiaDate } from '../../utils/dateUtils';
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -56,6 +58,29 @@ const MainLayout = ({ children }) => {
     fullMonthLastYear, // Mes completo del año anterior (para meta mensual)
     loading: salesLoading
   } = useSalesComparison(isDashboardRoute);
+
+  // Aviso fijo de cierres de caja pendientes (días pasados sin cierre registrado).
+  // Se consulta al montar (MainLayout se remonta en cada navegación) y se
+  // vuelve a consultar cuando Dashboard avisa que se completó un cierre
+  // exitoso (evento 'cash-closing-success'), para que el aviso desaparezca
+  // apenas se resuelva sin esperar a la próxima navegación.
+  const [pendingClosingDates, setPendingClosingDates] = useState([]);
+
+  const loadPendingClosingDates = async () => {
+    try {
+      const data = await getPendingClosingDates();
+      setPendingClosingDates(data.missing_dates || []);
+    } catch {
+      // No bloquea el resto de la app si esto falla - el aviso simplemente no aparece.
+    }
+  };
+
+  useEffect(() => {
+    loadPendingClosingDates();
+    const handler = () => loadPendingClosingDates();
+    window.addEventListener('cash-closing-success', handler);
+    return () => window.removeEventListener('cash-closing-success', handler);
+  }, []);
 
   // Estados para dropdowns
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -636,6 +661,31 @@ const MainLayout = ({ children }) => {
           </div>
         )}
       </header>
+
+      {/* AVISO FIJO: cierres de caja de días pasados sin registrar. Se mantiene
+          visible en cualquier página hasta que se haga el cierre de esa fecha
+          (o el usuario navegue y ya no se detecte pendiente). */}
+      {pendingClosingDates.length > 0 && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <button
+              onClick={() => navigate(`/dashboard?date=${pendingClosingDates[0]}`)}
+              className="w-full flex items-center gap-3 text-left group"
+            >
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+              <span className="text-sm text-amber-800">
+                <span className="font-semibold">
+                  {pendingClosingDates.length === 1
+                    ? `No se registró el cierre de caja del ${formatDateStringToColombiaDate(pendingClosingDates[0])}.`
+                    : `Hay ${pendingClosingDates.length} cierres de caja sin registrar, el más antiguo del ${formatDateStringToColombiaDate(pendingClosingDates[0])}.`}
+                </span>
+                {' '}
+                <span className="underline group-hover:text-amber-900">Haz clic para hacerlo ahora</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* SECCIÓN DE MÉTRICAS - Solo visible en Dashboard */}
       {isActive('/dashboard') && (

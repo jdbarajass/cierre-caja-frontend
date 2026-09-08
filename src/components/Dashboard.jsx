@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Calendar, DollarSign, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download, Image } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { submitCashClosing, getPreconsulta } from '../services/api';
@@ -18,8 +19,22 @@ const Dashboard = () => {
   // Establecer título de la página
   useDocumentTitle('Dashboard');
 
-  const [date, setDate] = useState(getColombiaTodayString());
-  const [closingDate, setClosingDate] = useState(getColombiaTodayString());
+  // Si se llega desde el aviso de "cierre pendiente" (MainLayout redirige a
+  // /dashboard?date=YYYY-MM-DD), precargar esa fecha en vez de la de hoy.
+  // Se valida el formato y que no sea una fecha futura (misma regla que ya
+  // aplica el selector de fecha manual más abajo).
+  const [searchParams] = useSearchParams();
+  const getInitialClosingDate = () => {
+    const requested = searchParams.get('date');
+    const today = getColombiaTodayString();
+    if (requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) && requested <= today) {
+      return requested;
+    }
+    return today;
+  };
+
+  const [date, setDate] = useState(getInitialClosingDate());
+  const [closingDate, setClosingDate] = useState(getInitialClosingDate());
   const [baseCaja, setBaseCaja] = useState(450000);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -247,6 +262,23 @@ const Dashboard = () => {
     setDraftRestoredNotice(false);
   };
 
+  // Si la URL cambia a otra fecha (ej. clic en el aviso fijo de "cierre
+  // pendiente" estando ya en /dashboard) sincroniza el formulario con esa
+  // fecha. El useState inicial de closingDate solo cubre la primera carga
+  // de la página - React Router no remonta el componente al cambiar solo
+  // el query string de la misma ruta, así que sin este efecto el segundo
+  // clic en el aviso (sin recargar la página) no movería la fecha.
+  useEffect(() => {
+    const requested = searchParams.get('date');
+    const today = getColombiaTodayString();
+    if (requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) && requested <= today && requested !== closingDate) {
+      setDate(requested);
+      setClosingDate(requested);
+      resetPreconsulta();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const handleSubmit = async () => {
     // Validar que haya al menos un valor en monedas o billetes
     const hasCoins = Object.values(coins).some(value => parseInt(value) > 0);
@@ -343,6 +375,11 @@ const Dashboard = () => {
 
       // El cierre se envió y procesó correctamente: ya no hace falta el borrador local
       clearDraft(closingDate);
+
+      // Avisa a MainLayout (aviso fijo de "cierre pendiente") que esta fecha
+      // ya tiene un cierre registrado, para que deje de mostrarla sin esperar
+      // a la próxima navegación entre páginas.
+      window.dispatchEvent(new CustomEvent('cash-closing-success', { detail: { date: closingDate } }));
 
       if (data.cash_count && data.cash_count.base) {
         const baseData = data.cash_count.base;

@@ -2,6 +2,34 @@
 
 ---
 
+## [2026-09-08] - Aviso de cierre de caja pendiente; estado de sincronización y alertas en Cuentas
+
+El usuario reportó que al hacer clic en "Sincronizar ahora" (Gestión → Cuentas) aparecía "No hay cierre de caja registrado para hoy", y preguntó qué pasaba si el cierre de un día no se hacía y se hacía atrasado al día siguiente. Investigado a fondo (ver CHANGELOG del backend, misma fecha): ni el botón ni el cron de las 9pm sincronizaban nada que no fuera la fecha de hoy, así que un cierre atrasado nunca se acreditaba. Esta entrada agrega el aviso recordatorio y corrige ese flujo del lado del frontend.
+
+### 🔔 `src/components/layout/MainLayout.jsx` — aviso fijo de "cierre pendiente"
+- Nuevo banner (visible en cualquier página, ámbar) que aparece mientras haya días pasados sin cierre de caja registrado, consultando `GET /api/cash_closing/pending-dates` al montar. Con 1 fecha faltante: "No se registró el cierre de caja del {fecha}."; con más de una: "Hay N cierres de caja sin registrar, el más antiguo del {fecha}."
+- Clic en el aviso navega a `/dashboard?date={fecha faltante}` con esa fecha ya cargada en el formulario del cierre.
+- Escucha el evento `cash-closing-success` (disparado por `Dashboard.jsx` tras un cierre exitoso) para refrescar la lista al instante, sin esperar a la próxima navegación entre páginas.
+
+### 📅 `src/components/Dashboard.jsx`
+- Lee el query param `?date=` (vía `useSearchParams`) para precargar esa fecha en el formulario del cierre al llegar desde el aviso de MainLayout, validando formato y que no sea una fecha futura.
+- **Bug real encontrado y corregido durante las pruebas:** como `/dashboard` es la misma ruta, React Router no remonta el componente al cambiar solo el query string — el `useState` inicial solo cubría la primera carga de la página. Se agregó un `useEffect` que sincroniza `closingDate` cada vez que cambia `searchParams`, para que un segundo clic en el aviso (estando ya en el Dashboard) sí mueva la fecha del formulario.
+- Tras un envío de cierre exitoso, dispara `window.dispatchEvent(new CustomEvent('cash-closing-success', ...))` para que el aviso de MainLayout se actualice sin recargar la página.
+
+### 🔁 `src/pages/CuentasLayout.jsx`
+- `handleSync` ahora llama a `syncDaily()` **sin fecha** (antes siempre pasaba la fecha de hoy) — el backend sincroniza todos los cierres pendientes hasta hoy en una sola llamada, incluyendo cierres atrasados de días anteriores.
+- Nueva línea de estado junto al botón "Sincronizar ahora": fecha/hora de la última sincronización exitosa y diferencia con Alegra (verde si es mínima, ámbar si es ≥$100), más un aviso ámbar si hay cierres hechos pero aún sin sincronizar. Alimentado por `GET /api/accounts/sync-status` (nuevo, `getSyncStatus()` en `accountsService.js`).
+- Nuevo banner rojo si el cron automático de las 9pm falló (workflow de GitHub Actions, ver backend): "La sincronización automática falló el {fecha}: {mensaje}". Se resuelve solo en la siguiente sincronización exitosa.
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos en los archivos tocados.
+- Probado end-to-end con Playwright contra un backend local (BD SQLite de prueba, nunca producción): login real, banner mostrando "2 cierres de caja sin registrar, el más antiguo del 05 de septiembre de 2026"; clic navega y precarga la fecha correcta en el formulario; al insertar directamente un cierre para esa fecha (simulando un envío exitoso) y disparar el evento, el banner se actualiza solo a la fecha restante sin recargar la página.
+- Probado también el estado de sincronización y la alerta de fallo en la pantalla de Cuentas contra el mismo backend local: alerta roja visible con el mensaje correcto, línea de "Última sincronización" con fecha/hora, y confirmación de que la alerta se limpia tras un clic exitoso en "Sincronizar ahora" incluso sin cierres pendientes.
+
+**Deploy:** solo frontend, Vercel tiene auto-deploy activo. Depende de que el backend (misma fecha) esté desplegado en Render (Manual Deploy) para que los endpoints nuevos (`pending-dates`, `sync-status`, `sync-failure`) respondan.
+
+---
+
 ## [2026-09-07] - Tarjeta combinada Saldo total + Balance disponible de Jhonatan en Resumen
 
 ### 💰 `src/pages/CuentasLayout.jsx`

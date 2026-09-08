@@ -363,6 +363,24 @@ export const getPreconsulta = async (date) => {
 };
 
 /**
+ * Función para obtener las fechas pasadas sin cierre de caja registrado
+ * (alimenta el aviso recordatorio fijo del dashboard)
+ * @returns {Promise} - Promesa con { success, missing_dates: string[] }
+ */
+export const getPendingClosingDates = async () => {
+  const response = await authenticatedFetch('/api/cash_closing/pending-dates', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Error al consultar cierres pendientes');
+  }
+
+  return await response.json();
+};
+
+/**
  * Función para obtener comparación de ventas año sobre año
  * @param {string} date - Fecha opcional en formato YYYY-MM-DD (si no se proporciona, usa la fecha actual)
  * @returns {Promise} - Promesa con los datos de comparación

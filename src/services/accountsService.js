@@ -65,3 +65,9 @@ export const syncDaily = async (date) => {
     }));
   } catch (e) { logger.error('syncDaily:', e); throw e; }
 };
+
+export const getSyncStatus = async () => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/sync-status`));
+  } catch (e) { logger.error('getSyncStatus:', e); throw e; }
+};

@@ -4,10 +4,10 @@ import {
   AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat
 } from 'lucide-react';
 import {
-  getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily
+  getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus
 } from '../services/accountsService';
 import { getEntries, getPurchases } from '../services/repurchaseService';
-import { getColombiaDate, getColombiaTodayString, formatColombiaDateTime } from '../utils/dateUtils';
+import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
 
 const fmt = (v) =>
@@ -83,6 +83,23 @@ const CuentasLayout = () => {
   const [savingTransfer, setSavingTransfer] = useState(false);
 
   const [syncing, setSyncing] = useState(false);
+
+  // Estado de la última sincronización (fecha/hora, diferencia con Alegra,
+  // cuántos cierres siguen sin sincronizar, y si el cron automático de las
+  // 9pm falló recientemente) - se muestra junto al botón "Sincronizar ahora"
+  // para que quede visible sin tener que adivinar si el cron corrió bien.
+  const [syncStatus, setSyncStatus] = useState(null);
+
+  const loadSyncStatus = useCallback(async () => {
+    try {
+      const data = await getSyncStatus();
+      setSyncStatus(data);
+    } catch {
+      // No bloquea el resto de Cuentas si esto falla - simplemente no se muestra.
+    }
+  }, []);
+
+  useEffect(() => { loadSyncStatus(); }, [loadSyncStatus]);
 
   const loadAccounts = useCallback(async () => {
     setLoading(true);
@@ -205,13 +222,17 @@ const CuentasLayout = () => {
     clearMessages();
     setSyncing(true);
     try {
-      const data = await syncDaily(getColombiaTodayString());
+      // Sin fecha: el backend sincroniza TODOS los cierres pendientes hasta
+      // hoy (no solo el de hoy) - así un cierre atrasado (ej. el de ayer,
+      // hecho hoy porque no se alcanzó a tiempo) también se acredita, sin
+      // necesitar reintentar con una fecha específica.
+      const data = await syncDaily();
       if (data.credited && data.credited.length > 0) {
-        setSuccess(`Sincronizado: ${data.credited.map(c => `${c.account} ${fmt(c.amount)}`).join(', ')}`);
+        setSuccess(`Sincronizado: ${data.credited.map(c => `${c.account} ${fmt(c.amount)}${c.date ? ` (${c.date})` : ''}`).join(', ')}`);
       } else {
         setSuccess(data.message || 'Sincronización completada (sin montos nuevos que acreditar)');
       }
-      await loadAccounts();
+      await Promise.all([loadAccounts(), loadSyncStatus()]);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -260,6 +281,19 @@ const CuentasLayout = () => {
 
       {tab === 'resumen' && (
         <div className="space-y-6">
+          {syncStatus?.last_failure && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">
+                  La sincronización automática falló el {formatColombiaDateTime(syncStatus.last_failure.at)}
+                </p>
+                <p className="text-red-600">{syncStatus.last_failure.message}</p>
+                <p className="text-red-500 text-xs mt-1">Se resuelve sola en la próxima sincronización exitosa (o haz clic en "Sincronizar ahora").</p>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex items-center justify-between flex-wrap gap-6">
             <div className="flex items-center flex-wrap gap-4">
               <div>
@@ -291,14 +325,40 @@ const CuentasLayout = () => {
               </div>
             </div>
 
-            <button
-              onClick={handleSync}
-              disabled={syncing}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Sincronizando...' : 'Sincronizar ahora'}
-            </button>
+            <div className="flex flex-col items-end gap-1.5">
+              <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Sincronizando...' : 'Sincronizar ahora'}
+              </button>
+              {syncStatus && (
+                <div className="text-right">
+                  {syncStatus.last_synced_at ? (
+                    <p className="text-xs text-gray-400">
+                      Última sincronización: {formatColombiaDateTime(syncStatus.last_synced_at)} ({syncStatus.last_synced_date})
+                      {syncStatus.last_discrepancy != null && (
+                        <>
+                          {' · '}
+                          <span className={Math.abs(syncStatus.last_discrepancy) >= 100 ? 'text-amber-600 font-medium' : 'text-emerald-600'}>
+                            Diferencia con Alegra: {fmt(syncStatus.last_discrepancy)}
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400">Aún no se ha sincronizado ningún cierre.</p>
+                  )}
+                  {syncStatus.pending_count > 0 && (
+                    <p className="text-xs text-amber-600 font-medium">
+                      {syncStatus.pending_count} cierre{syncStatus.pending_count > 1 ? 's' : ''} sin sincronizar
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
